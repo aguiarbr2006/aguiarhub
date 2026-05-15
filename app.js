@@ -1855,11 +1855,11 @@ function bindButtons() {
     const whatsappButton = event.target.closest("[data-whatsapp-appointment]");
     if (whatsappButton) sendAppointmentWhatsapp(whatsappButton.dataset.whatsappAppointment);
     // entrada com botao de demonstração para facilitar testes sem precisar criar usuário
-    document.querySelector("#demoLoginBtn")?.addEventListener("click", () => {
-  currentUser = { uid: "demo" };
-  userPermissions = { admin: true };
-  showApp();
-  renderAll();
+  //   document.querySelector("#demoLoginBtn")?.addEventListener("click", () => {
+  // currentUser = { uid: "demo" };
+  // userPermissions = { admin: true };
+  // showApp();
+  // renderAll();
 });//.. fim do codigo de demonstração
   });
 
