@@ -258,25 +258,6 @@ async function initAuth() {
   }
 }
 
-//deletar depois
-firebase.firestore().collection("users").get().then((snapshot) => {
-  snapshot.forEach((doc) => {
-    firebase.firestore().collection("users").doc(doc.id).update({
-      permissions: {
-        viewDashboard: true,
-        viewAgenda: true,
-        createClient: true,
-        editClient: true,
-        createAppointment: true,
-        editAppointment: true,
-        changeStatus: true,
-        viewFinance: true,
-        admin: true
-      }
-    });
-  });
-});
-//ate aqui deletar
 async function createDefaultAdminAccount() {
   try {
     const adminEmail = "aguiar-br@hotmail.com";
@@ -343,7 +324,7 @@ async function loadUserPermissions(uid) {
 }
 
 function checkPermission(permission) {
-  if (!currentUser) return false;
+  if (!currentUser) return true;
   if (userPermissions.admin) return true;
   return userPermissions[permission] || false;
 }
