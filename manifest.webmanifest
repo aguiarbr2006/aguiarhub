@@ -1,7 +1,7 @@
 {
-  "name": "Rayssa Oliveira Gestão",
-  "short_name": "Rayssa Oliveira",
-  "description": "Gestão de clientes, agenda, serviços e financeiro para Rayssa Oliveira nail designer.",
+  "name": "Aguiar Hub Gestão",
+  "short_name": "Aguiar Hub",
+  "description": "Gestão de clientes, agenda, serviços e financeiro para Aguiar Hub nail designer.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4efe6",

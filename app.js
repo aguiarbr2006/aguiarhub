@@ -6,7 +6,7 @@ const currency = new Intl.NumberFormat("pt-BR", {
 });
 
 const DEFAULT_SETTINGS = {
-  companyName: "Rayssa Oliveira",
+  companyName: "Aguiar Hub",
   subtitle: "Nail designer",
   logoText: "R",
   logoImage: "",
@@ -209,7 +209,7 @@ function replaceState(nextState) {
 }
 
 function isFirebaseConfigured() {
-  const config = window.RAYSSA_FIREBASE_CONFIG;
+  const config = window.FIREBASE_CONFIG;
   return Boolean(
     window.firebase &&
       config &&
@@ -228,7 +228,7 @@ async function initAuth() {
   }
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(window.RAYSSA_FIREBASE_CONFIG);
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
 
     if (window.location.protocol === "file:") {
       showLogin();
@@ -429,9 +429,9 @@ function initRemoteSync() {
   }
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(window.RAYSSA_FIREBASE_CONFIG);
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
     remoteDb = firebase.firestore();
-    remoteDocRef = remoteDb.doc(window.RAYSSA_FIREBASE_DOC_PATH || "sistemas/rayssa-oliveira");
+    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/aguiarhub");
 
     remoteDocRef.onSnapshot(
       (snapshot) => {
@@ -1515,7 +1515,7 @@ function sendAppointmentWhatsapp(appointmentId) {
     `Olá, ${appointment.nomeCliente}!`,
     "",
     "Segue seu comprovante de agendamento:",
-    `Nail designer: Rayssa Oliveira`,
+    `Nail designer: Aguiar Hub`,
     `Serviço: ${appointmentServiceName(appointment)}`,
     `Data: ${start.toLocaleDateString("pt-BR")}`,
     `Chegada: ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} com 15 minutos de tolerância para atraso`,
@@ -2054,7 +2054,7 @@ function exportCsv() {
 
 function exportBackup() {
   const backup = {
-    app: "Rayssa Oliveira Gestão",
+    app: "Aguiar Hub",
     version: 1,
     exportedAt: new Date().toISOString(),
     data: {
@@ -2066,7 +2066,7 @@ function exportBackup() {
       financeiro: state.financeiro,
     },
   };
-  download(`backup-rayssa-oliveira-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
+  download(`backup-Aguiarhub-oliveira-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
   toast("Backup completo exportado.");
 }
 

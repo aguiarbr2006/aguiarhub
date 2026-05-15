@@ -2,7 +2,7 @@
 // No need for imports - firebase global object is available from script tags
 
 // Your web app's Firebase configuration
-window.RAYSSA_FIREBASE_CONFIG = {
+window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyB8zFqZwIxCX41UPdXemSTr9ecdAoKE0As",
   authDomain: "aguiarhub.firebaseapp.com",
   projectId: "aguiarhub",
@@ -13,5 +13,5 @@ window.RAYSSA_FIREBASE_CONFIG = {
 };
 
 // Document path for syncing across devices
-window.RAYSSA_FIREBASE_DOC_PATH = "sistemas/rayssa-oliveira";
+window.FIREBASE_DOC_PATH = "sistemas/aguiarhub";
 

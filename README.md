@@ -1,6 +1,6 @@
-# Rayssa Oliveira Gestão
+# AguiarHub Oliveira Gestão
 
-Sistema de gestão para Rayssa Oliveira, nail designer, com foco em mobile, iPhone e web app.
+Sistema de gestão para AguiarHub , nail designer, com foco em mobile, iPhone e web app.
 
 ## Como Abrir
 
