@@ -326,7 +326,7 @@ async function loadUserPermissions(uid) {
 function checkPermission(permission) {
   if (!currentUser) return true;
   if (userPermissions.admin) return true;
-  return userPermissions[permission] || false;
+  return userPermissions[permission] || true;
 }
 
 function showLogin() {
