@@ -260,7 +260,7 @@ async function initAuth() {
 
 async function createDefaultAdminAccount() {
   try {
-    const adminEmail = "aguiar-br@hotmail.com";
+    const adminEmail = "admin";
     const adminPassword = "guitarra";
     const adminName = "admin";
 
