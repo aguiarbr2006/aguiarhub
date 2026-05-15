@@ -332,10 +332,10 @@ function checkPermission() {
   return true;
 }
 
-function showLogin() {
-  document.querySelector("#appShell").style.display = "none";
-  document.querySelector("#loginOverlay").style.display = "flex";
-}
+// function showLogin() {
+//   document.querySelector("#appShell").style.display = "none";
+//   document.querySelector("#loginOverlay").style.display = "flex";
+// }
 
 function showApp() {
   document.querySelector("#appShell").style.display = "grid";
