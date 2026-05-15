@@ -6,7 +6,7 @@ const currency = new Intl.NumberFormat("pt-BR", {
 });
 
 const DEFAULT_SETTINGS = {
-  companyName: "Rayssa Oliveira",
+  companyName: "BARBARA BEAUTY",
   subtitle: "Nail designer",
   logoText: "R",
   logoImage: "",
@@ -209,7 +209,7 @@ function replaceState(nextState) {
 }
 
 function isFirebaseConfigured() {
-  const config = window.RAYSSA_FIREBASE_CONFIG;
+  const config = window.FIREBASE_CONFIG;
   return Boolean(
     window.firebase &&
       config &&
@@ -228,7 +228,7 @@ async function initAuth() {
   }
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(window.RAYSSA_FIREBASE_CONFIG);
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
 
     if (window.location.protocol === "file:") {
       showLogin();
@@ -260,9 +260,9 @@ async function initAuth() {
 
 async function createDefaultAdminAccount() {
   try {
-    const adminEmail = "admin";
+    const adminEmail = "aguiar-br@hotmail.com";
     const adminPassword = "guitarra";
-    const adminName = "admin";
+    const adminName = "Aguiar";
 
     // Tentar fazer login com a conta admin para verificar se ela existe
     try {
@@ -279,7 +279,7 @@ async function createDefaultAdminAccount() {
 
         await firebase.firestore().collection("users").doc(uid).set({
           name: adminName,
-          username: "admin",
+          username: adminName,
           email: adminEmail,
           permissions: {
             viewDashboard: true,
@@ -324,9 +324,9 @@ async function loadUserPermissions(uid) {
 }
 
 function checkPermission(permission) {
-  if (!currentUser) return true;
+  if (!currentUser) return false;
   if (userPermissions.admin) return true;
-  return userPermissions[permission] || true;
+  return userPermissions[permission] || false;
 }
 
 function showLogin() {
@@ -429,13 +429,9 @@ function initRemoteSync() {
   }
 
   try {
-    if (!firebase.apps.length) firebase.initializeApp(window.RAYSSA_FIREBASE_CONFIG);
-    //addcionado isso 
-     console.log("Firebase iniciado com sucesso");
-  }
-     //deposi remver
+    if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
     remoteDb = firebase.firestore();
-    remoteDocRef = remoteDb.doc(window.RAYSSA_FIREBASE_DOC_PATH || "sistemas/rayssa-oliveira");
+    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/firebase");
 
     remoteDocRef.onSnapshot(
       (snapshot) => {
@@ -1518,7 +1514,7 @@ function sendAppointmentWhatsapp(appointmentId) {
     `Olá, ${appointment.nomeCliente}!`,
     "",
     "Segue seu comprovante de agendamento:",
-    `Nail designer: Rayssa Oliveira`,
+    `Nail designer: Barbora Beauty`,
     `Serviço: ${appointmentServiceName(appointment)}`,
     `Data: ${start.toLocaleDateString("pt-BR")}`,
     `Chegada: ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} com 15 minutos de tolerância para atraso`,
@@ -2049,7 +2045,7 @@ function exportCsv() {
 
 function exportBackup() {
   const backup = {
-    app: "Rayssa Oliveira Gestão",
+    app: "Barbora Beauty",
     version: 1,
     exportedAt: new Date().toISOString(),
     data: {
@@ -2061,7 +2057,7 @@ function exportBackup() {
       financeiro: state.financeiro,
     },
   };
-  download(`backup-rayssa-oliveira-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
+  download(`backup-AguiarHub-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
   toast("Backup completo exportado.");
 }
 
