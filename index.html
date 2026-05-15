@@ -19,7 +19,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
     <script src="firebase-config.js"></script>
   </head>
   <body>
@@ -30,6 +29,9 @@
           <p>Acesso de Funcionários</p>
         </div>
         <form id="loginForm" class="login-form">
+          <! botao de demo para acessar sem login, apenas para mostrar a interface e funcionalidades, sem acesso ao banco de dados real>
+          <button type="button" id="demoLoginBtn" class="ghost-button">Acessar sem login (Demo)</button>
+
           <label id="loginIdentifierField">
             Usuário ou email
             <input type="text" id="loginIdentifier" required />
@@ -118,15 +120,6 @@
               <span>Lucro do mês</span>
               <strong id="monthProfit">R$ 0,00</strong>
             </article>
-
-            <article class="stat-card">
-              <span>Recebido hoje (PIX)</span>
-              <strong id="todayPix">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Recebido hoje (cartão)</span>
-              <strong id="todayCard">R$ 0,00</strong>
-            </article>
           </div>
 
           <div class="content-grid">
@@ -191,14 +184,6 @@
         <section class="page" id="financeiroPage">
           <div class="toolbar">
             <input type="month" id="financeMonth" />
-            <select id="financePaymentMethod">
-              <option value="todos">Todas as formas</option>
-              <option value="dinheiro">Dinheiro</option>
-              <option value="pix">PIX</option>
-              <option value="debito">Débito</option>
-              <option value="credito">Crédito</option>
-              <option value="credito_parcelado">Crédito parcelado</option>
-            </select>
             <select id="financeType">
               <option value="todos">Todos</option>
               <option value="entrada">Entradas</option>
@@ -206,17 +191,6 @@
             </select>
             <button class="ghost-button" id="exportPdf">PDF</button>
             <button class="primary-button" id="openFinanceModal">Novo lançamento</button>
-          </div>
-
-          <div class="stats-grid three finance-payment-stats">
-            <article class="stat-card">
-              <span>Taxas de cartão no mês</span>
-              <strong id="financeMonthFees">R$ 0,00</strong>
-            </article>
-            <article class="stat-card stat-card-wide">
-              <span>Recebido no mês por forma</span>
-              <div class="finance-method-breakdown" id="financeMethodBreakdown"></div>
-            </article>
           </div>
           <div class="stats-grid three">
             <article class="stat-card">
@@ -267,17 +241,6 @@
               <label>Texto <small>Cor do texto principal</small><input id="settingInk" type="color" /></label>
               <label>Crédito do desenvolvedor<input id="settingDeveloperCredit" readonly /></label>
             </div>
-
-            <div class="panel-title"><h2>Taxas de pagamento (%)</h2></div>
-            <div class="form-grid">
-              <label>Dinheiro<input id="settingFeeDinheiro" type="number" min="0" step="0.01" /></label>
-              <label>PIX<input id="settingFeePix" type="number" min="0" step="0.01" /></label>
-              <label>Débito<input id="settingFeeDebito" type="number" min="0" step="0.01" /></label>
-              <label>Crédito<input id="settingFeeCredito" type="number" min="0" step="0.01" /></label>
-              <label>Crédito parcelado<input id="settingFeeCreditoParcelado" type="number" min="0" step="0.01" /></label>
-              <label>InfiniteTag (handle)<input id="settingInfinitePayHandle" placeholder="sua-tag" /></label>
-            </div>
-
             <div class="admin-preview">
               <span class="brand-mark" id="adminLogoPreview">R</span>
               <div>
@@ -369,50 +332,6 @@
         </button>
       </div>
     </div>
-
-
-    <dialog id="paymentModal">
-      <form method="dialog" class="modal-form" id="paymentForm">
-        <header>
-          <h2>Receber pagamento</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="paymentModal">×</button>
-        </header>
-        <div id="paymentSummary" class="payment-summary"></div>
-        <label>Forma de pagamento
-          <select id="paymentMetodo" required>
-            <option value="">Selecione</option>
-            <option value="dinheiro">Dinheiro</option>
-            <option value="pix">PIX</option>
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
-            <option value="credito_parcelado">Crédito parcelado</option>
-          </select>
-        </label>
-        <label>Adquirente
-          <select id="paymentAdquirente">
-            <option value="manual">Manual (caixa)</option>
-            <option value="infinitepay">InfinitePay</option>
-            <option value="mercado_pago">Mercado Pago</option>
-          </select>
-        </label>
-        <label>Valor bruto<input id="paymentValorBruto" type="number" min="0" step="0.01" readonly /></label>
-        <label>Taxa (%)<input id="paymentTaxaPercent" type="number" min="0" step="0.01" /></label>
-        <div class="final-value payment-totals">
-          Taxa: <strong id="paymentTaxaValor">R$ 0,00</strong> · Líquido: <strong id="paymentValorLiquido">R$ 0,00</strong>
-        </div>
-        <label class="checkbox"><input id="paymentMarcarPago" type="checkbox" checked /> Pagamento recebido</label>
-        <label>Observação<textarea id="paymentObservacao" rows="2"></textarea></label>
-        <div id="paymentOnlineActions" class="payment-online-actions hidden">
-          <button type="button" class="ghost-button" id="generateInfinitePayLink">Gerar link InfinitePay</button>
-          <button type="button" class="ghost-button hidden" id="generateMercadoPagoLink">Gerar link Mercado Pago</button>
-          <div id="paymentLinkInfo" class="payment-link-info hidden"></div>
-        </div>
-        <footer>
-          <button type="button" class="ghost-button" data-close="paymentModal">Cancelar</button>
-          <button type="button" class="primary-button" id="confirmPaymentButton">Confirmar recebimento</button>
-        </footer>
-      </form>
-    </dialog>
 
     <dialog id="clientModal">
       <form method="dialog" class="modal-form" id="clientForm">
