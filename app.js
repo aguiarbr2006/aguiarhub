@@ -262,7 +262,7 @@ async function createDefaultAdminAccount() {
   try {
     const adminEmail = "aguiar-br@hotmail.com";
     const adminPassword = "guitarra";
-    const adminName = "Administrador";
+    const adminName = "admin";
 
     // Tentar fazer login com a conta admin para verificar se ela existe
     try {
@@ -323,19 +323,16 @@ async function loadUserPermissions(uid) {
   }
 }
 
-// function checkPermission(permission) {
-//   if (!currentUser) return true;
-//   if (userPermissions.admin) return true;
-//   return userPermissions[permission] || true;
-// }
-function checkPermission() {
-  return true;
+function checkPermission(permission) {
+  if (!currentUser) return true;
+  if (userPermissions.admin) return true;
+  return userPermissions[permission] || true;
 }
 
-// function showLogin() {
-//   document.querySelector("#appShell").style.display = "none";
-//   document.querySelector("#loginOverlay").style.display = "flex";
-// }
+function showLogin() {
+  document.querySelector("#appShell").style.display = "none";
+  document.querySelector("#loginOverlay").style.display = "flex";
+}
 
 function showApp() {
   document.querySelector("#appShell").style.display = "grid";
