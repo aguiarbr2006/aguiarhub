@@ -6,20 +6,27 @@
     <meta name="theme-color" content="#4f7d5a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Barbara Beauty" />
-    <title>Barbara Beauty</title>
+    <meta name="apple-mobile-web-app-title" content="Rayssa Oliveira" />
+    <title>Rayssa Oliveira Gestão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
     <script src="firebase-config.js"></script>
   </head>
   <body>
     <div id="loginOverlay" class="login-overlay">
       <div class="login-modal">
         <div class="login-header">
-          <h1>Barbara Beauty</h1>
+          <h1>Rayssa Oliveira Gestão</h1>
           <p>Acesso de Funcionários</p>
         </div>
         <form id="loginForm" class="login-form">
@@ -42,20 +49,41 @@
     <div class="app-shell" id="appShell" style="display: none;">
       <aside class="sidebar">
         <div class="brand">
-          <span class="brand-mark">B</span>
+          <span class="brand-mark">N</span>
           <div>
-            <strong>Barbara Beauty</strong>
+            <strong>Rayssa Oliveira</strong>
             <small>Nail designer</small>
           </div>
         </div>
         <nav class="nav" aria-label="Navegação principal">
-          <button class="nav-item active" data-page="dashboard">Dashboard</button>
-          <button class="nav-item" data-page="agenda">Agenda</button>
-          <button class="nav-item" data-page="clientes">Clientes</button>
-          <button class="nav-item" data-page="financeiro">Financeiro</button>
-          <button class="nav-item" data-page="pacotes">Pacotes</button>
-          <button class="nav-item" data-page="servicos">Serviços</button>
-          <button class="nav-item" data-page="admin">Admin</button>
+          <button class="nav-item active" data-page="dashboard">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+            <span class="nav-label">Dashboard</span>
+          </button>
+          <button class="nav-item" data-page="agenda">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            <span class="nav-label">Agenda</span>
+          </button>
+          <button class="nav-item" data-page="clientes">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="nav-label">Clientes</span>
+          </button>
+          <button class="nav-item" data-page="financeiro">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+            <span class="nav-label">Financeiro</span>
+          </button>
+          <button class="nav-item" data-page="pacotes">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+            <span class="nav-label">Pacotes</span>
+          </button>
+          <button class="nav-item" data-page="servicos">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
+            <span class="nav-label">Serviços</span>
+          </button>
+          <button class="nav-item" data-page="admin">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+            <span class="nav-label">Admin</span>
+          </button>
         </nav>
         <div class="developer-credit" id="developerCredit">Desenvolvido por Rafael Aguiar Ribeiro · @aguiar.3d</div>
       </aside>
@@ -89,6 +117,15 @@
             <article class="stat-card">
               <span>Lucro do mês</span>
               <strong id="monthProfit">R$ 0,00</strong>
+            </article>
+
+            <article class="stat-card">
+              <span>Recebido hoje (PIX)</span>
+              <strong id="todayPix">R$ 0,00</strong>
+            </article>
+            <article class="stat-card">
+              <span>Recebido hoje (cartão)</span>
+              <strong id="todayCard">R$ 0,00</strong>
             </article>
           </div>
 
@@ -154,6 +191,14 @@
         <section class="page" id="financeiroPage">
           <div class="toolbar">
             <input type="month" id="financeMonth" />
+            <select id="financePaymentMethod">
+              <option value="todos">Todas as formas</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">PIX</option>
+              <option value="debito">Débito</option>
+              <option value="credito">Crédito</option>
+              <option value="credito_parcelado">Crédito parcelado</option>
+            </select>
             <select id="financeType">
               <option value="todos">Todos</option>
               <option value="entrada">Entradas</option>
@@ -161,6 +206,17 @@
             </select>
             <button class="ghost-button" id="exportPdf">PDF</button>
             <button class="primary-button" id="openFinanceModal">Novo lançamento</button>
+          </div>
+
+          <div class="stats-grid three finance-payment-stats">
+            <article class="stat-card">
+              <span>Taxas de cartão no mês</span>
+              <strong id="financeMonthFees">R$ 0,00</strong>
+            </article>
+            <article class="stat-card stat-card-wide">
+              <span>Recebido no mês por forma</span>
+              <div class="finance-method-breakdown" id="financeMethodBreakdown"></div>
+            </article>
           </div>
           <div class="stats-grid three">
             <article class="stat-card">
@@ -211,10 +267,21 @@
               <label>Texto <small>Cor do texto principal</small><input id="settingInk" type="color" /></label>
               <label>Crédito do desenvolvedor<input id="settingDeveloperCredit" readonly /></label>
             </div>
+
+            <div class="panel-title"><h2>Taxas de pagamento (%)</h2></div>
+            <div class="form-grid">
+              <label>Dinheiro<input id="settingFeeDinheiro" type="number" min="0" step="0.01" /></label>
+              <label>PIX<input id="settingFeePix" type="number" min="0" step="0.01" /></label>
+              <label>Débito<input id="settingFeeDebito" type="number" min="0" step="0.01" /></label>
+              <label>Crédito<input id="settingFeeCredito" type="number" min="0" step="0.01" /></label>
+              <label>Crédito parcelado<input id="settingFeeCreditoParcelado" type="number" min="0" step="0.01" /></label>
+              <label>InfiniteTag (handle)<input id="settingInfinitePayHandle" placeholder="sua-tag" /></label>
+            </div>
+
             <div class="admin-preview">
-              <span class="brand-mark" id="adminLogoPreview">B</span>
+              <span class="brand-mark" id="adminLogoPreview">R</span>
               <div>
-                <strong id="adminNamePreview">Barbara Beauty</strong>
+                <strong id="adminNamePreview">Rayssa Oliveira</strong>
                 <small id="adminSubtitlePreview">Nail designer</small>
               </div>
               <button class="primary-button" type="button">Botão principal</button>
@@ -253,22 +320,99 @@
       </main>
 
       <nav class="bottom-nav" aria-label="Navegação mobile">
-        <button class="nav-item active" data-page="dashboard">Início</button>
-        <button class="nav-item" data-page="agenda">Agenda</button>
-        <button class="nav-item" data-page="clientes">Clientes</button>
-        <button class="nav-item" data-page="financeiro">Finanças</button>
-        <button class="nav-item" data-page="pacotes">Pacotes</button>
-        <button class="nav-item" data-page="servicos">Serviços</button>
-        <button class="nav-item" data-page="admin">Admin</button>
+        <button class="nav-item active" data-page="dashboard">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+          <span class="nav-label">Início</span>
+        </button>
+        <button class="nav-item" data-page="agenda">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+          <span class="nav-label">Agenda</span>
+        </button>
+        <button class="nav-item" data-page="clientes">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="nav-label">Clientes</span>
+        </button>
+        <button class="nav-item" data-page="financeiro">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
+          <span class="nav-label">Finanças</span>
+        </button>
+        <button class="nav-item" data-page="pacotes">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+          <span class="nav-label">Pacotes</span>
+        </button>
+        <button class="nav-item" data-page="servicos">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
+          <span class="nav-label">Serviços</span>
+        </button>
+        <button class="nav-item" data-page="admin">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+          <span class="nav-label">Admin</span>
+        </button>
       </nav>
       <button class="primary-button mobile-more" id="mobileMoreButton">Mais</button>
       <div class="mobile-more-menu" id="mobileMoreMenu">
-        <button class="nav-item" data-page="pacotes">Pacotes</button>
-        <button class="nav-item" data-page="servicos">Serviços</button>
-        <button class="nav-item" data-page="funcionarios">Funcionários</button>
-        <button class="nav-item" data-page="admin">Admin</button>
+        <button class="nav-item" data-page="pacotes">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+          <span class="nav-label">Pacotes</span>
+        </button>
+        <button class="nav-item" data-page="servicos">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
+          <span class="nav-label">Serviços</span>
+        </button>
+        <button class="nav-item" data-page="funcionarios">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
+          <span class="nav-label">Funcionários</span>
+        </button>
+        <button class="nav-item" data-page="admin">
+          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+          <span class="nav-label">Admin</span>
+        </button>
       </div>
     </div>
+
+
+    <dialog id="paymentModal">
+      <form method="dialog" class="modal-form" id="paymentForm">
+        <header>
+          <h2>Receber pagamento</h2>
+          <button value="cancel" class="icon-button" type="button" data-close="paymentModal">×</button>
+        </header>
+        <div id="paymentSummary" class="payment-summary"></div>
+        <label>Forma de pagamento
+          <select id="paymentMetodo" required>
+            <option value="">Selecione</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">PIX</option>
+            <option value="debito">Débito</option>
+            <option value="credito">Crédito</option>
+            <option value="credito_parcelado">Crédito parcelado</option>
+          </select>
+        </label>
+        <label>Adquirente
+          <select id="paymentAdquirente">
+            <option value="manual">Manual (caixa)</option>
+            <option value="infinitepay">InfinitePay</option>
+            <option value="mercado_pago">Mercado Pago</option>
+          </select>
+        </label>
+        <label>Valor bruto<input id="paymentValorBruto" type="number" min="0" step="0.01" readonly /></label>
+        <label>Taxa (%)<input id="paymentTaxaPercent" type="number" min="0" step="0.01" /></label>
+        <div class="final-value payment-totals">
+          Taxa: <strong id="paymentTaxaValor">R$ 0,00</strong> · Líquido: <strong id="paymentValorLiquido">R$ 0,00</strong>
+        </div>
+        <label class="checkbox"><input id="paymentMarcarPago" type="checkbox" checked /> Pagamento recebido</label>
+        <label>Observação<textarea id="paymentObservacao" rows="2"></textarea></label>
+        <div id="paymentOnlineActions" class="payment-online-actions hidden">
+          <button type="button" class="ghost-button" id="generateInfinitePayLink">Gerar link InfinitePay</button>
+          <button type="button" class="ghost-button hidden" id="generateMercadoPagoLink">Gerar link Mercado Pago</button>
+          <div id="paymentLinkInfo" class="payment-link-info hidden"></div>
+        </div>
+        <footer>
+          <button type="button" class="ghost-button" data-close="paymentModal">Cancelar</button>
+          <button type="button" class="primary-button" id="confirmPaymentButton">Confirmar recebimento</button>
+        </footer>
+      </form>
+    </dialog>
 
     <dialog id="clientModal">
       <form method="dialog" class="modal-form" id="clientForm">
@@ -366,7 +510,7 @@
         <label>Cliente<select id="packageClient" required></select></label>
         <label>Nome do pacote<input id="packageName" value="Pacote mensal" required /></label>
         <label>Valor pago<input id="packageValue" type="number" min="0" step="0.01" required /></label>
-        <label>Créditos de Sobrancelha<input id="packagePeMao" type="number" min="0" step="1" value="2" required /></label>
+        <label>Créditos de pé e mão<input id="packagePeMao" type="number" min="0" step="1" value="2" required /></label>
         <label>Créditos de mão<input id="packageMao" type="number" min="0" step="1" value="2" required /></label>
         <label>Validade<input id="packageExpires" type="date" /></label>
         <footer>

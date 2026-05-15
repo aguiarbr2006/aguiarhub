@@ -5,8 +5,24 @@ const currency = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
+const DEFAULT_PAYMENT_FEES = {
+  dinheiro: 0,
+  pix: 0,
+  debito: 1.99,
+  credito: 3.49,
+  creditoParcelado: 4.99,
+};
+
+const PAYMENT_METHOD_LABELS = {
+  dinheiro: "Dinheiro",
+  pix: "PIX",
+  debito: "Débito",
+  credito: "Crédito",
+  credito_parcelado: "Crédito parcelado",
+};
+
 const DEFAULT_SETTINGS = {
-  companyName: "BARBARA BEAUTY",
+  companyName: "AguiarHub",
   subtitle: "Nail designer",
   logoText: "R",
   logoImage: "",
@@ -17,11 +33,18 @@ const DEFAULT_SETTINGS = {
     beige: "#f4efe6",
     ink: "#2b2b2b",
   },
+  paymentFees: { ...DEFAULT_PAYMENT_FEES },
+  paymentProfile: "manual",
+  infinitePayHandle: "",
 };
 
 function defaultSettings() {
   return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 }
+
+let paymentModalAppointmentId = null;
+let paymentFirestoreUnsub = null;
+let remoteFunctions = null;
 
 const hasSavedState = Boolean(localStorage.getItem(STORAGE_KEY));
 const state = loadState();
@@ -170,6 +193,7 @@ function seedAppointment() {
     status: "Agendado",
     observacoes: "",
     financeiroGerado: false,
+    pagamento: defaultPayment({ valorFinal: servico.valorPadrao, usarPacote: false }),
     dataCadastro: new Date().toISOString(),
   });
 }
@@ -262,7 +286,7 @@ async function createDefaultAdminAccount() {
   try {
     const adminEmail = "aguiar-br@hotmail.com";
     const adminPassword = "guitarra";
-    const adminName = "Aguiar";
+    const adminName = "Administrador";
 
     // Tentar fazer login com a conta admin para verificar se ela existe
     try {
@@ -279,7 +303,7 @@ async function createDefaultAdminAccount() {
 
         await firebase.firestore().collection("users").doc(uid).set({
           name: adminName,
-          username: adminName,
+          username: "admin",
           email: adminEmail,
           permissions: {
             viewDashboard: true,
@@ -431,7 +455,14 @@ function initRemoteSync() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
     remoteDb = firebase.firestore();
-    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/firebase");
+    if (firebase.functions) {
+      try {
+        remoteFunctions = firebase.app().functions("southamerica-east1");
+      } catch (error) {
+        remoteFunctions = firebase.functions();
+      }
+    }
+    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/aguiarhub");
 
     remoteDocRef.onSnapshot(
       (snapshot) => {
@@ -481,6 +512,102 @@ function queueRemoteSave(force = false) {
   }, force ? 0 : 450);
 }
 
+function defaultPayment(appointment) {
+  const bruto = Number(appointment?.valorFinal || 0);
+  return {
+    status: appointment?.usarPacote ? "isento" : "pendente",
+    metodo: "",
+    adquirente: "manual",
+    valorBruto: bruto,
+    taxaPercentual: 0,
+    taxaValor: 0,
+    valorLiquido: bruto,
+    pagoEm: null,
+    observacao: "",
+    linkUrl: "",
+    externalId: "",
+  };
+}
+
+function normalizePayment(appointment) {
+  const base = defaultPayment(appointment);
+  if (!appointment.pagamento || typeof appointment.pagamento !== "object") {
+    appointment.pagamento = base;
+    return appointment.pagamento;
+  }
+  appointment.pagamento = {
+    ...base,
+    ...appointment.pagamento,
+    valorBruto: Number(appointment.pagamento.valorBruto ?? base.valorBruto),
+    taxaPercentual: Number(appointment.pagamento.taxaPercentual ?? 0),
+    taxaValor: Number(appointment.pagamento.taxaValor ?? 0),
+    valorLiquido: Number(appointment.pagamento.valorLiquido ?? base.valorBruto),
+  };
+  if (appointment.usarPacote) appointment.pagamento.status = "isento";
+  return appointment.pagamento;
+}
+
+function calculatePaymentTotals(bruto, taxaPercentual) {
+  const valorBruto = Math.max(0, Number(bruto || 0));
+  const pct = Math.max(0, Number(taxaPercentual || 0));
+  const taxaValor = Math.round(valorBruto * (pct / 100) * 100) / 100;
+  const valorLiquido = Math.round((valorBruto - taxaValor) * 100) / 100;
+  return { valorBruto, taxaPercentual: pct, taxaValor, valorLiquido };
+}
+
+function paymentFeesSettings() {
+  return {
+    ...DEFAULT_PAYMENT_FEES,
+    ...(state.settings?.paymentFees || {}),
+  };
+}
+
+function applyFeeForMethod(metodo) {
+  const fees = paymentFeesSettings();
+  if (metodo === "dinheiro") return fees.dinheiro;
+  if (metodo === "pix") return fees.pix;
+  if (metodo === "debito") return fees.debito;
+  if (metodo === "credito") return fees.credito;
+  if (metodo === "credito_parcelado") return fees.creditoParcelado;
+  return 0;
+}
+
+function paymentMethodLabel(metodo) {
+  return PAYMENT_METHOD_LABELS[metodo] || metodo || "—";
+}
+
+function paymentStatusLabel(appointment) {
+  const pag = normalizePayment(appointment);
+  if (pag.status === "pago") return "Pago";
+  if (pag.status === "isento") return "Pacote";
+  return "Pendente";
+}
+
+function paymentStatusClass(appointment) {
+  const pag = normalizePayment(appointment);
+  if (pag.status === "pago") return "concluido";
+  if (pag.status === "isento") return "confirmado";
+  return "cancelado";
+}
+
+function isAppointmentPaid(appointment) {
+  const pag = normalizePayment(appointment);
+  return pag.status === "pago" || pag.status === "isento";
+}
+
+function canReceivePayment(appointment) {
+  return appointment && !appointment.usarPacote && Number(appointment.valorFinal || 0) > 0;
+}
+
+function mapCaptureMethodToFeeKey(captureMethod) {
+  const key = normalize(captureMethod || "");
+  if (key.includes("pix")) return "pix";
+  if (key.includes("debit")) return "debito";
+  if (key.includes("parcel")) return "credito_parcelado";
+  if (key.includes("credit")) return "credito";
+  return "credito";
+}
+
 function migrateState() {
   state.settings = {
     ...defaultSettings(),
@@ -489,6 +616,12 @@ function migrateState() {
       ...DEFAULT_SETTINGS.colors,
       ...(state.settings?.colors || {}),
     },
+    paymentFees: {
+      ...DEFAULT_PAYMENT_FEES,
+      ...(state.settings?.paymentFees || {}),
+    },
+    paymentProfile: state.settings?.paymentProfile || "manual",
+    infinitePayHandle: state.settings?.infinitePayHandle || "",
   };
   state.clientes ||= [];
   state.servicos ||= [];
@@ -501,6 +634,21 @@ function migrateState() {
     pacote.peMaoUsado = Number(pacote.peMaoUsado || 0);
     pacote.maoUsado = Number(pacote.maoUsado || 0);
     pacote.status ||= "ativo";
+  });
+  state.agendamentos.forEach((appointment) => {
+    normalizePayment(appointment);
+    appointment.pagamento.valorBruto = Number(appointment.valorFinal || appointment.pagamento.valorBruto || 0);
+    if (appointment.pagamento.status !== "isento" && appointment.pagamento.status !== "pago") {
+      const totals = calculatePaymentTotals(appointment.pagamento.valorBruto, appointment.pagamento.taxaPercentual);
+      appointment.pagamento.taxaValor = totals.taxaValor;
+      appointment.pagamento.valorLiquido = totals.valorLiquido;
+    }
+  });
+  state.financeiro.forEach((entry) => {
+    entry.metodoPagamento ||= "";
+    entry.adquirente ||= "";
+    entry.valorBruto = Number(entry.valorBruto ?? entry.valor ?? 0);
+    entry.taxaValor = Number(entry.taxaValor ?? 0);
   });
   recomputePackageUsage();
 }
@@ -515,6 +663,7 @@ function applySettings() {
   document.documentElement.style.setProperty("--green-dark", settings.colors.greenDark);
   document.documentElement.style.setProperty("--beige", settings.colors.beige);
   document.documentElement.style.setProperty("--ink", settings.colors.ink);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", settings.colors.green);
   document.title = `${settings.companyName} Gestão`;
   document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", settings.companyName);
   document.querySelector("#developerCredit").textContent = settings.developerCredit;
@@ -551,6 +700,13 @@ function renderAdminSettings() {
   document.querySelector("#settingBeige").value = settings.colors.beige;
   document.querySelector("#settingInk").value = settings.colors.ink;
   document.querySelector("#settingDeveloperCredit").value = settings.developerCredit;
+  const fees = paymentFeesSettings();
+  document.querySelector("#settingFeeDinheiro")?.value = fees.dinheiro;
+  document.querySelector("#settingFeePix")?.value = fees.pix;
+  document.querySelector("#settingFeeDebito")?.value = fees.debito;
+  document.querySelector("#settingFeeCredito")?.value = fees.credito;
+  document.querySelector("#settingFeeCreditoParcelado")?.value = fees.creditoParcelado;
+  document.querySelector("#settingInfinitePayHandle")?.value = settings.infinitePayHandle || "";
   document.querySelector("#adminNamePreview").textContent = settings.companyName;
   document.querySelector("#adminSubtitlePreview").textContent = settings.subtitle;
   const preview = document.querySelector("#adminLogoPreview");
@@ -779,18 +935,32 @@ function getNextAvailableSlot(candidate, conflict) {
 
 function syncAppointmentFinance(appointment) {
   const existingFinance = state.financeiro.find((entry) => entry.origem === "agendamento" && entry.agendamentoId === appointment.id);
+  const pag = normalizePayment(appointment);
+  const shouldHaveEntry =
+    appointment.status === "Concluído" && !appointment.usarPacote && (pag.status === "pago" || pag.status === "isento");
 
-  if (appointment.status !== "Concluído" || appointment.usarPacote) {
+  if (!shouldHaveEntry) {
     state.financeiro = state.financeiro.filter((entry) => !(entry.origem === "agendamento" && entry.agendamentoId === appointment.id));
     appointment.financeiroGerado = false;
     return existingFinance ? "removed" : "none";
   }
 
+  if (pag.status === "isento") {
+    state.financeiro = state.financeiro.filter((entry) => !(entry.origem === "agendamento" && entry.agendamentoId === appointment.id));
+    appointment.financeiroGerado = false;
+    return existingFinance ? "removed" : "none";
+  }
+
+  const metodoLabel = paymentMethodLabel(pag.metodo);
   const payload = {
     tipo: "entrada",
-    descricao: `Atendimento - ${appointmentServiceName(appointment)} - ${appointment.nomeCliente}`,
+    descricao: `Atendimento - ${appointmentServiceName(appointment)} - ${appointment.nomeCliente}${metodoLabel !== "—" ? ` (${metodoLabel})` : ""}`,
     categoria: "Serviço",
-    valor: appointment.valorFinal,
+    valor: pag.valorLiquido,
+    valorBruto: pag.valorBruto,
+    taxaValor: pag.taxaValor,
+    metodoPagamento: pag.metodo,
+    adquirente: pag.adquirente,
     data: toDateInput(appointment.dataHoraInicio),
     origem: "agendamento",
     agendamentoId: appointment.id,
@@ -867,6 +1037,13 @@ function renderDashboard() {
   document.querySelector("#monthRevenue").textContent = money(monthRevenue);
   document.querySelector("#monthExpenses").textContent = money(monthExpenses);
   document.querySelector("#monthProfit").textContent = money(monthRevenue - monthExpenses);
+  const todayEntries = incomes.filter((f) => f.data === today);
+  const todayPix = sum(todayEntries.filter((f) => f.metodoPagamento === "pix"));
+  const todayCard = sum(
+    todayEntries.filter((f) => ["debito", "credito", "credito_parcelado"].includes(f.metodoPagamento)),
+  );
+  document.querySelector("#todayPix")?.textContent = money(todayPix);
+  document.querySelector("#todayCard")?.textContent = money(todayCard);
 
   renderRevenueChart();
   renderServiceRanking();
@@ -1034,11 +1211,20 @@ function renderAppointments() {
   document.querySelectorAll("[data-status-appointment]").forEach((select) => {
     select.addEventListener("change", () => updateAppointmentStatus(select.dataset.statusAppointment, select.value));
   });
+  document.querySelectorAll("[data-pay-appointment]").forEach((button) => {
+    button.addEventListener("click", () => openPaymentModal(button.dataset.payAppointment));
+  });
 }
 
 function appointmentCard(item) {
   const start = parseDate(item.dataHoraInicio);
   const end = parseDate(item.dataHoraFim);
+  const pag = normalizePayment(item);
+  const receiveBtn = canReceivePayment(item)
+    ? `<button class="primary-button" data-pay-appointment="${item.id}">Receber</button>`
+    : item.usarPacote && item.status !== "Concluído"
+      ? `<button class="primary-button" data-pay-appointment="${item.id}">Concluir</button>`
+      : "";
   return `
     <article class="item-card">
       <div class="item-row">
@@ -1046,13 +1232,18 @@ function appointmentCard(item) {
           <h3 class="item-title">${escapeHtml(item.nomeCliente)}</h3>
           <div class="muted">${start.toLocaleDateString("pt-BR")} · ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às ${end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
         </div>
-        <span class="badge ${statusClass(item.status)}">${item.status}</span>
+        <div class="item-badges">
+          <span class="badge ${statusClass(item.status)}">${item.status}</span>
+          <span class="badge ${paymentStatusClass(item)}">${paymentStatusLabel(item)}</span>
+        </div>
       </div>
       <div>${escapeHtml(appointmentServiceName(item))} · <strong>${item.usarPacote ? "Pacote pré-pago" : money(item.valorFinal)}</strong></div>
       ${item.usarPacote ? `<div class="badge">Pacote: ${escapeHtml(packageCreditLabel(item.tipoCreditoPacote))}</div>` : ""}
+      ${!item.usarPacote && pag.status === "pago" ? `<div class="muted">${paymentMethodLabel(pag.metodo)} · líquido ${money(pag.valorLiquido)}</div>` : ""}
       <div class="muted">${escapeHtml(item.telefone || "")}</div>
       <div class="actions">
         <button class="ghost-button" data-edit-appointment="${item.id}">Editar</button>
+        ${receiveBtn}
         <button class="ghost-button" data-whatsapp-appointment="${item.id}">WhatsApp</button>
         <select data-status-appointment="${item.id}" aria-label="Alterar status">
           ${["Agendado", "Confirmado", "Concluído", "Cancelado"].map((status) => `<option ${status === item.status ? "selected" : ""}>${status}</option>`).join("")}
@@ -1061,6 +1252,7 @@ function appointmentCard(item) {
     </article>
   `;
 }
+
 
 function renderClients() {
   const search = normalize(document.querySelector("#clientSearch").value);
@@ -1287,18 +1479,44 @@ function serviceCard(service) {
   `;
 }
 
+function renderFinanceSummary(month) {
+  const entries = state.financeiro.filter((f) => f.tipo === "entrada" && (!month || inMonth(f.data, month)));
+  const taxas = sum(entries.map((f) => f.taxaValor || 0));
+  const byMethod = { dinheiro: 0, pix: 0, cartao: 0 };
+  entries.forEach((f) => {
+    const m = f.metodoPagamento || "";
+    if (m === "dinheiro") byMethod.dinheiro += Number(f.valor || 0);
+    else if (m === "pix") byMethod.pix += Number(f.valor || 0);
+    else if (m === "debito" || m === "credito" || m === "credito_parcelado") byMethod.cartao += Number(f.valor || 0);
+  });
+  const elTaxas = document.querySelector("#financeMonthFees");
+  const elBreakdown = document.querySelector("#financeMethodBreakdown");
+  if (elTaxas) elTaxas.textContent = money(taxas);
+  if (elBreakdown) {
+    elBreakdown.innerHTML = `
+      <span>Dinheiro: <strong>${money(byMethod.dinheiro)}</strong></span>
+      <span>PIX: <strong>${money(byMethod.pix)}</strong></span>
+      <span>Cartão (líquido): <strong>${money(byMethod.cartao)}</strong></span>
+    `;
+  }
+}
+
 function renderFinance() {
   const month = document.querySelector("#financeMonth").value;
   const type = document.querySelector("#financeType").value;
+  const method = document.querySelector("#financePaymentMethod")?.value || "todos";
   const filtered = state.financeiro
     .filter((f) => !month || inMonth(f.data, month))
     .filter((f) => type === "todos" || f.tipo === type)
+    .filter((f) => method === "todos" || f.metodoPagamento === method)
     .sort((a, b) => b.data.localeCompare(a.data));
-  const income = sum(state.financeiro.filter((f) => (!month || inMonth(f.data, month)) && f.tipo === "entrada"));
-  const outcome = sum(state.financeiro.filter((f) => (!month || inMonth(f.data, month)) && f.tipo === "saida"));
+  const monthEntries = state.financeiro.filter((f) => !month || inMonth(f.data, month));
+  const income = sum(monthEntries.filter((f) => f.tipo === "entrada"));
+  const outcome = sum(monthEntries.filter((f) => f.tipo === "saida"));
   document.querySelector("#financeIncome").textContent = money(income);
   document.querySelector("#financeOutcome").textContent = money(outcome);
   document.querySelector("#financeProfit").textContent = money(income - outcome);
+  renderFinanceSummary(month);
   document.querySelector("#financeList").innerHTML = filtered.length
     ? filtered.map(financeCard).join("")
     : empty("Nenhum lançamento encontrado.");
@@ -1308,6 +1526,10 @@ function renderFinance() {
 }
 
 function financeCard(entry) {
+  const methodLine =
+    entry.metodoPagamento && entry.tipo === "entrada"
+      ? `<div class="muted">${paymentMethodLabel(entry.metodoPagamento)}${Number(entry.taxaValor) > 0 ? ` · bruto ${money(entry.valorBruto)} · taxa ${money(entry.taxaValor)}` : ""}</div>`
+      : "";
   return `
     <article class="item-card">
       <div class="item-row">
@@ -1318,6 +1540,7 @@ function financeCard(entry) {
         <span class="badge ${entry.tipo === "saida" ? "cancelado" : "concluido"}">${entry.tipo}</span>
       </div>
       <div><strong>${money(entry.valor)}</strong></div>
+      ${methodLine}
       <div class="actions">
         <button class="ghost-button" data-edit-finance="${entry.id}">Editar</button>
       </div>
@@ -1473,30 +1696,293 @@ function openFinance(financeId = "") {
   document.querySelector("#financeModal").showModal();
 }
 
-function updateAppointmentStatus(appointmentId, status) {
-  const appointment = state.agendamentos.find((a) => a.id === appointmentId);
-  if (!appointment) return;
-  if (status === "Concluído" && appointment.usarPacote && packageAvailability(appointment.pacoteId, appointment.tipoCreditoPacote, appointment.id) <= 0) {
-    renderAppointments();
-    toast(`Este pacote não tem crédito disponível de ${packageCreditLabel(appointment.tipoCreditoPacote)}.`);
-    return;
+function finishAppointmentAsPackage(appointment) {
+  normalizePayment(appointment).status = "isento";
+  appointment.status = "Concluído";
+  syncAppointmentFinance(appointment);
+  recomputePackageUsage();
+  mirrorAppointmentPayment(appointment);
+  save();
+  renderAll();
+  toast("Atendimento concluído (pacote).");
+}
+
+function trySetAppointmentStatus(appointment, status) {
+  if (status === "Concluído" && appointment.usarPacote) {
+    if (packageAvailability(appointment.pacoteId, appointment.tipoCreditoPacote, appointment.id) <= 0) {
+      toast(`Este pacote não tem crédito disponível de ${packageCreditLabel(appointment.tipoCreditoPacote)}.`);
+      return false;
+    }
+    finishAppointmentAsPackage(appointment);
+    return true;
+  }
+  if (status === "Concluído" && canReceivePayment(appointment) && !isAppointmentPaid(appointment)) {
+    openPaymentModal(appointment.id);
+    return false;
   }
   const candidate = { ...appointment, status };
   const conflict = getScheduleConflict(candidate);
   if (conflict) {
     showConflictDialog(conflict);
-    renderAppointments();
-    return;
+    return false;
   }
   appointment.status = status;
+  if (status !== "Concluído") {
+    const pag = normalizePayment(appointment);
+    if (pag.status === "pago") pag.status = "pendente";
+  }
   const financeAction = syncAppointmentFinance(appointment);
-  recomputePackageUsage();
+  mirrorAppointmentPayment(appointment);
   save();
   renderAll();
   if (financeAction === "created") toast("Entrada criada no financeiro automaticamente.");
   else if (financeAction === "updated") toast("Entrada financeira atualizada automaticamente.");
   else if (financeAction === "removed") toast("Entrada removida do financeiro automaticamente.");
   else toast("Status atualizado.");
+  return true;
+}
+
+function updateAppointmentStatus(appointmentId, status) {
+  const appointment = state.agendamentos.find((a) => a.id === appointmentId);
+  if (!appointment) return;
+  const ok = trySetAppointmentStatus(appointment, status);
+  if (!ok) renderAppointments();
+}
+
+async function mirrorAppointmentPayment(appointment) {
+  if (!remoteDb || !appointment?.id) return;
+  try {
+    await remoteDb.collection("appointments").doc(appointment.id).set(
+      {
+        agendamentoId: appointment.id,
+        nomeCliente: appointment.nomeCliente,
+        valorFinal: appointment.valorFinal,
+        status: appointment.status,
+        pagamento: appointment.pagamento,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  } catch (error) {
+    console.warn("Não foi possível espelhar pagamento no Firestore:", error);
+  }
+}
+
+function stopPaymentFirestoreListener() {
+  if (paymentFirestoreUnsub) {
+    paymentFirestoreUnsub();
+    paymentFirestoreUnsub = null;
+  }
+}
+
+function startPaymentFirestoreListener(appointmentId) {
+  stopPaymentFirestoreListener();
+  if (!remoteDb || !appointmentId) return;
+  paymentFirestoreUnsub = remoteDb.collection("appointments").doc(appointmentId).onSnapshot((snapshot) => {
+    if (!snapshot.exists) return;
+    const data = snapshot.data();
+    const appointment = state.agendamentos.find((a) => a.id === appointmentId);
+    if (!appointment || !data?.pagamento) return;
+    const wasPaid = isAppointmentPaid(appointment);
+    appointment.pagamento = { ...normalizePayment(appointment), ...data.pagamento };
+    if (data.status) appointment.status = data.status;
+    if (!wasPaid && appointment.pagamento.status === "pago") {
+      appointment.status = "Concluído";
+      syncAppointmentFinance(appointment);
+      save();
+      renderAll();
+      updatePaymentModalPreview();
+      toast("Pagamento confirmado online.");
+    }
+  });
+}
+
+function updatePaymentModalPreview() {
+  const bruto = Number(document.querySelector("#paymentValorBruto")?.value || 0);
+  const taxaPct = Number(document.querySelector("#paymentTaxaPercent")?.value || 0);
+  const totals = calculatePaymentTotals(bruto, taxaPct);
+  const taxaEl = document.querySelector("#paymentTaxaValor");
+  const liquidoEl = document.querySelector("#paymentValorLiquido");
+  if (taxaEl) taxaEl.textContent = money(totals.taxaValor);
+  if (liquidoEl) liquidoEl.textContent = money(totals.valorLiquido);
+}
+
+function updatePaymentOnlineActions() {
+  const adquirente = document.querySelector("#paymentAdquirente")?.value || "manual";
+  const appointment = state.agendamentos.find((a) => a.id === paymentModalAppointmentId);
+  const pag = appointment ? normalizePayment(appointment) : null;
+  const online = document.querySelector("#paymentOnlineActions");
+  if (!online) return;
+  const showInfinite = adquirente === "infinitepay" && pag?.status !== "pago";
+  const showMp = adquirente === "mercado_pago" && pag?.status !== "pago";
+  online.classList.toggle("hidden", !showInfinite && !showMp);
+  document.querySelector("#generateInfinitePayLink")?.classList.toggle("hidden", !showInfinite);
+  document.querySelector("#generateMercadoPagoLink")?.classList.toggle("hidden", !showMp);
+  const linkBox = document.querySelector("#paymentLinkInfo");
+  if (linkBox && pag?.linkUrl) {
+    linkBox.classList.remove("hidden");
+    linkBox.innerHTML = `<a href="${escapeHtml(pag.linkUrl)}" target="_blank" rel="noopener">Abrir link de pagamento</a>`;
+  } else if (linkBox) {
+    linkBox.classList.add("hidden");
+    linkBox.innerHTML = "";
+  }
+}
+
+function openPaymentModal(appointmentId) {
+  const appointment = state.agendamentos.find((a) => a.id === appointmentId);
+  if (!appointment) return;
+  if (appointment.usarPacote) {
+    finishAppointmentAsPackage(appointment);
+    return;
+  }
+  if (!canReceivePayment(appointment)) {
+    toast("Este agendamento não possui valor para receber.");
+    return;
+  }
+  paymentModalAppointmentId = appointmentId;
+  normalizePayment(appointment);
+  const pag = appointment.pagamento;
+  pag.valorBruto = Number(appointment.valorFinal || 0);
+
+  document.querySelector("#paymentSummary").innerHTML = `
+    <div><strong>${escapeHtml(appointment.nomeCliente)}</strong></div>
+    <div class="muted">${escapeHtml(appointmentServiceName(appointment))}</div>
+  `;
+  document.querySelector("#paymentMetodo").value = pag.metodo || "pix";
+  document.querySelector("#paymentAdquirente").value = pag.adquirente || "manual";
+  document.querySelector("#paymentValorBruto").value = pag.valorBruto;
+  document.querySelector("#paymentTaxaPercent").value = pag.taxaPercentual || applyFeeForMethod(pag.metodo || "pix");
+  document.querySelector("#paymentObservacao").value = pag.observacao || "";
+  document.querySelector("#paymentMarcarPago").checked = pag.status === "pago";
+  updatePaymentModalPreview();
+  updatePaymentOnlineActions();
+  startPaymentFirestoreListener(appointmentId);
+  mirrorAppointmentPayment(appointment);
+  document.querySelector("#paymentModal").showModal();
+}
+
+function closePaymentModal() {
+  stopPaymentFirestoreListener();
+  paymentModalAppointmentId = null;
+  document.querySelector("#paymentModal")?.close();
+}
+
+function onPaymentFormChange() {
+  const metodo = document.querySelector("#paymentMetodo").value;
+  const adquirente = document.querySelector("#paymentAdquirente").value;
+  if (adquirente === "manual") {
+    document.querySelector("#paymentTaxaPercent").value = applyFeeForMethod(metodo);
+  }
+  updatePaymentModalPreview();
+  updatePaymentOnlineActions();
+}
+
+function confirmPayment() {
+  const appointment = state.agendamentos.find((a) => a.id === paymentModalAppointmentId);
+  if (!appointment) return;
+  const metodo = document.querySelector("#paymentMetodo").value;
+  const adquirente = document.querySelector("#paymentAdquirente").value;
+  const marcarPago = document.querySelector("#paymentMarcarPago").checked;
+  if (!metodo) return toast("Selecione a forma de pagamento.");
+  if (!marcarPago && adquirente === "manual") return toast("Marque como pago para confirmar o recebimento.");
+
+  const bruto = Number(document.querySelector("#paymentValorBruto").value || appointment.valorFinal);
+  const taxaPct = Number(document.querySelector("#paymentTaxaPercent").value || 0);
+  const totals = calculatePaymentTotals(bruto, taxaPct);
+  const pag = normalizePayment(appointment);
+  Object.assign(pag, {
+    status: "pago",
+    metodo,
+    adquirente,
+    valorBruto: totals.valorBruto,
+    taxaPercentual: totals.taxaPercentual,
+    taxaValor: totals.taxaValor,
+    valorLiquido: totals.valorLiquido,
+    pagoEm: new Date().toISOString(),
+    observacao: document.querySelector("#paymentObservacao").value.trim(),
+  });
+
+  if (appointment.status !== "Concluído") {
+    const candidate = { ...appointment, status: "Concluído" };
+    const conflict = getScheduleConflict(candidate);
+    if (conflict) {
+      showConflictDialog(conflict);
+      return;
+    }
+    appointment.status = "Concluído";
+  }
+
+  const financeAction = syncAppointmentFinance(appointment);
+  recomputePackageUsage();
+  mirrorAppointmentPayment(appointment);
+  save();
+  closePaymentModal();
+  renderAll();
+  if (financeAction === "created") toast("Pagamento confirmado e entrada criada no financeiro.");
+  else if (financeAction === "updated") toast("Pagamento confirmado e financeiro atualizado.");
+  else toast("Pagamento confirmado.");
+}
+
+async function generateInfinitePayLink() {
+  const appointment = state.agendamentos.find((a) => a.id === paymentModalAppointmentId);
+  if (!appointment || !remoteFunctions) {
+    toast("Firebase Functions não disponível. Configure e faça deploy das functions.");
+    return;
+  }
+  try {
+    onPaymentFormChange();
+    const pag = normalizePayment(appointment);
+    pag.metodo = document.querySelector("#paymentMetodo").value;
+    pag.adquirente = "infinitepay";
+    pag.taxaPercentual = Number(document.querySelector("#paymentTaxaPercent").value || 0);
+    const totals = calculatePaymentTotals(Number(appointment.valorFinal), pag.taxaPercentual);
+    Object.assign(pag, totals);
+    await mirrorAppointmentPayment(appointment);
+    const callable = remoteFunctions.httpsCallable("createInfinitePayLink");
+    const result = await callable({
+      appointmentId: appointment.id,
+      valorBruto: totals.valorBruto,
+      descricao: `${appointmentServiceName(appointment)} - ${appointment.nomeCliente}`,
+    });
+    pag.linkUrl = result.data?.url || "";
+    pag.externalId = result.data?.orderNsu || appointment.id;
+    save();
+    updatePaymentOnlineActions();
+    if (pag.linkUrl) window.open(pag.linkUrl, "_blank", "noopener");
+    toast("Link InfinitePay gerado.");
+  } catch (error) {
+    console.error(error);
+    toast("Erro ao gerar link InfinitePay: " + (error.message || "verifique o deploy"));
+  }
+}
+
+async function generateMercadoPagoLink() {
+  const appointment = state.agendamentos.find((a) => a.id === paymentModalAppointmentId);
+  if (!appointment || !remoteFunctions) {
+    toast("Firebase Functions não disponível.");
+    return;
+  }
+  try {
+    onPaymentFormChange();
+    const pag = normalizePayment(appointment);
+    pag.adquirente = "mercado_pago";
+    await mirrorAppointmentPayment(appointment);
+    const callable = remoteFunctions.httpsCallable("createMercadoPagoPreference");
+    const result = await callable({
+      appointmentId: appointment.id,
+      valorBruto: Number(appointment.valorFinal),
+      descricao: `${appointmentServiceName(appointment)} - ${appointment.nomeCliente}`,
+    });
+    pag.linkUrl = result.data?.url || "";
+    pag.externalId = result.data?.preferenceId || "";
+    save();
+    updatePaymentOnlineActions();
+    if (pag.linkUrl) window.open(pag.linkUrl, "_blank", "noopener");
+    toast("Link Mercado Pago gerado.");
+  } catch (error) {
+    console.error(error);
+    toast("Erro ao gerar link Mercado Pago: " + (error.message || "verifique o deploy"));
+  }
 }
 
 function sendAppointmentWhatsapp(appointmentId) {
@@ -1514,7 +2000,7 @@ function sendAppointmentWhatsapp(appointmentId) {
     `Olá, ${appointment.nomeCliente}!`,
     "",
     "Segue seu comprovante de agendamento:",
-    `Nail designer: Barbora Beauty`,
+    `Nail designer: AguiarHub`,
     `Serviço: ${appointmentServiceName(appointment)}`,
     `Data: ${start.toLocaleDateString("pt-BR")}`,
     `Chegada: ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} com 15 minutos de tolerância para atraso`,
@@ -1717,8 +2203,14 @@ function bindForms() {
       pacoteId: usarPacote ? pacoteId : "",
       tipoCreditoPacote: usarPacote ? tipoCreditoPacote : "",
       financeiroGerado: existing?.financeiroGerado || false,
+      pagamento: existing?.pagamento
+        ? { ...normalizePayment(existing), valorBruto: finalValue }
+        : defaultPayment({ valorFinal: finalValue, usarPacote }),
       dataCadastro: existing?.dataCadastro || new Date().toISOString(),
     };
+
+    const desiredStatus = document.querySelector("#appointmentStatus").value;
+    payload.status = desiredStatus;
 
     const conflict = getScheduleConflict(payload);
     if (conflict) {
@@ -1732,8 +2224,29 @@ function bindForms() {
     } else {
       state.agendamentos.push(payload);
     }
+    normalizePayment(savedAppointment);
+    savedAppointment.pagamento.valorBruto = finalValue;
+
+    if (desiredStatus === "Concluído" && usarPacote) {
+      document.querySelector("#appointmentModal").close();
+      finishAppointmentAsPackage(savedAppointment);
+      return;
+    }
+
+    if (desiredStatus === "Concluído" && canReceivePayment(savedAppointment) && !isAppointmentPaid(savedAppointment)) {
+      savedAppointment.status = existing?.status && existing.status !== "Concluído" ? existing.status : "Confirmado";
+      mirrorAppointmentPayment(savedAppointment);
+      save();
+      document.querySelector("#appointmentModal").close();
+      renderAll();
+      openPaymentModal(savedAppointment.id);
+      toast("Confirme o pagamento para concluir o atendimento.");
+      return;
+    }
+
     const financeAction = syncAppointmentFinance(savedAppointment);
     recomputePackageUsage();
+    mirrorAppointmentPayment(savedAppointment);
     save();
     document.querySelector("#appointmentModal").close();
     renderAll();
@@ -1774,10 +2287,26 @@ function bindForms() {
     state.settings.colors.greenDark = document.querySelector("#settingGreenDark").value;
     state.settings.colors.beige = document.querySelector("#settingBeige").value;
     state.settings.colors.ink = document.querySelector("#settingInk").value;
+    state.settings.paymentFees = {
+      dinheiro: Number(document.querySelector("#settingFeeDinheiro")?.value || 0),
+      pix: Number(document.querySelector("#settingFeePix")?.value || 0),
+      debito: Number(document.querySelector("#settingFeeDebito")?.value || 0),
+      credito: Number(document.querySelector("#settingFeeCredito")?.value || 0),
+      creditoParcelado: Number(document.querySelector("#settingFeeCreditoParcelado")?.value || 0),
+    };
+    state.settings.infinitePayHandle = document.querySelector("#settingInfinitePayHandle")?.value?.trim() || "";
     save();
     renderAll();
     toast("Configurações salvas.");
   });
+
+  document.querySelector("#paymentForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    confirmPayment();
+  });
+  document.querySelector("#confirmPaymentButton")?.addEventListener("click", () => confirmPayment());
+  document.querySelector("#generateInfinitePayLink")?.addEventListener("click", () => generateInfinitePayLink());
+  document.querySelector("#generateMercadoPagoLink")?.addEventListener("click", () => generateMercadoPagoLink());
 
   document.querySelector("#loginForm").addEventListener("submit", handleAuthSubmit);
 
@@ -1851,6 +2380,8 @@ function bindButtons() {
   document.addEventListener("click", (event) => {
     const editButton = event.target.closest("[data-edit-appointment]");
     if (editButton) openAppointment(editButton.dataset.editAppointment);
+    const payButton = event.target.closest("[data-pay-appointment]");
+    if (payButton) openPaymentModal(payButton.dataset.payAppointment);
     const whatsappButton = event.target.closest("[data-whatsapp-appointment]");
     if (whatsappButton) sendAppointmentWhatsapp(whatsappButton.dataset.whatsappAppointment);
   });
@@ -2007,8 +2538,14 @@ function bindInputs() {
     financeMonth.value = toMonthInput(new Date());
   }
 
-  ["agendaMonth", "agendaStatus", "agendaSearch", "clientSearch", "serviceSearch", "packageSearch", "financeMonth", "financeType", "dashboardPeriod"].forEach((idName) => {
-    document.querySelector(`#${idName}`).addEventListener("input", renderAll);
+  ["agendaMonth", "agendaStatus", "agendaSearch", "clientSearch", "serviceSearch", "packageSearch", "financeMonth", "financeType", "financePaymentMethod", "dashboardPeriod"].forEach((idName) => {
+    document.querySelector(`#${idName}`)?.addEventListener("input", renderAll);
+    document.querySelector(`#${idName}`)?.addEventListener("change", renderAll);
+  });
+
+  ["paymentMetodo", "paymentAdquirente", "paymentTaxaPercent", "paymentValorBruto"].forEach((idName) => {
+    document.querySelector(`#${idName}`)?.addEventListener("input", onPaymentFormChange);
+    document.querySelector(`#${idName}`)?.addEventListener("change", onPaymentFormChange);
   });
 
   ["appointmentPrice", "discountType", "discountValue"].forEach((idName) => {
@@ -2045,7 +2582,7 @@ function exportCsv() {
 
 function exportBackup() {
   const backup = {
-    app: "Barbora Beauty",
+    app: "AguiarHub",
     version: 1,
     exportedAt: new Date().toISOString(),
     data: {
@@ -2086,6 +2623,7 @@ function importBackup(event) {
       state.agendamentos = data.agendamentos;
       state.pacotes = Array.isArray(data.pacotes) ? data.pacotes : [];
       state.financeiro = data.financeiro;
+      migrateState();
       recomputePackageUsage();
       state.agendamentos.forEach((appointment) => {
         appointment.financeiroGerado = state.financeiro.some((entry) => entry.origem === "agendamento" && entry.agendamentoId === appointment.id);

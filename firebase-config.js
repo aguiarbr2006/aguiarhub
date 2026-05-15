@@ -3,7 +3,7 @@
 
 // Your web app's Firebase configuration
 window.FIREBASE_CONFIG = {
- apiKey: "AIzaSyB8zFqZwIxCX41UPdXemSTr9ecdAoKE0As",
+  apiKey: "AIzaSyB8zFqZwIxCX41UPdXemSTr9ecdAoKE0As",
   authDomain: "aguiarhub.firebaseapp.com",
   projectId: "aguiarhub",
   storageBucket: "aguiarhub.firebasestorage.app",
@@ -13,5 +13,5 @@ window.FIREBASE_CONFIG = {
 };
 
 // Document path for syncing across devices
-window.FIREBASE_DOC_PATH = "sistemas/firebase";
+window.FIREBASE_DOC_PATH = "sistemas/aguiarhub";
 
