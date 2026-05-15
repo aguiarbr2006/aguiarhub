@@ -15,3 +15,5 @@ window.RAYSSA_FIREBASE_CONFIG = {
 // Document path for syncing across devices
 window.RAYSSA_FIREBASE_DOC_PATH = "sistemas/rayssa-oliveira";
 
+
+

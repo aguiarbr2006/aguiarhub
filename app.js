@@ -430,6 +430,9 @@ function initRemoteSync() {
 
   try {
     if (!firebase.apps.length) firebase.initializeApp(window.RAYSSA_FIREBASE_CONFIG);
+    //addcionado isso 
+     console.log("Firebase iniciado com sucesso");
+     //deposi remver
     remoteDb = firebase.firestore();
     remoteDocRef = remoteDb.doc(window.RAYSSA_FIREBASE_DOC_PATH || "sistemas/rayssa-oliveira");
 
