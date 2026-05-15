@@ -3,13 +3,13 @@
 
 // Your web app's Firebase configuration
 window.RAYSSA_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDwH3VhiWpzYRas-QXzVxNuA0-_wW7g5sE",
-  authDomain: "rayssaoliveira-b9c86.firebaseapp.com",
-  projectId: "rayssaoliveira-b9c86",
-  storageBucket: "rayssaoliveira-b9c86.firebasestorage.app",
-  messagingSenderId: "983397980222",
-  appId: "1:983397980222:web:75c6765109f537c0d7196f",
-  measurementId: "G-XBX5ZNPTFZ"
+  apiKey: "AIzaSyB8zFqZwIxCX41UPdXemSTr9ecdAoKE0As",
+  authDomain: "aguiarhub.firebaseapp.com",
+  projectId: "aguiarhub",
+  storageBucket: "aguiarhub.firebasestorage.app",
+  messagingSenderId: "773789523474",
+  appId: "1:773789523474:web:a1da3771247291fddd42cb",
+  measurementId: "G-5X6C3NX2VZ"
 };
 
 // Document path for syncing across devices
