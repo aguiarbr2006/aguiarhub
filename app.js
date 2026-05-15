@@ -1854,12 +1854,12 @@ function bindButtons() {
     if (editButton) openAppointment(editButton.dataset.editAppointment);
     const whatsappButton = event.target.closest("[data-whatsapp-appointment]");
     if (whatsappButton) sendAppointmentWhatsapp(whatsappButton.dataset.whatsappAppointment);
-    // entrada com botao de demonstração para facilitar testes sem precisar criar usuário
-  //   document.querySelector("#demoLoginBtn")?.addEventListener("click", () => {
-  // currentUser = { uid: "demo" };
-  // userPermissions = { admin: true };
-  // showApp();
-  // renderAll();
+  // entrada com botao de demonstração para facilitar testes sem precisar criar usuário
+     document.querySelector("#demoLoginBtn")?.addEventListener("click", () => {
+   currentUser = { uid: "demo" };
+   userPermissions = { admin: true };
+   showApp();
+   renderAll();
 });//.. fim do codigo de demonstração
   });
 
