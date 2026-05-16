@@ -1,6 +1,6 @@
-# AguiarHub Oliveira Gestão
+# Barbara Beauty Gestão
 
-Sistema de gestão para AguiarHub , nail designer, com foco em mobile, iPhone e web app.
+Sistema de gestão para nail designer, com foco em mobile, iPhone e web app.
 
 ## Como Abrir
 

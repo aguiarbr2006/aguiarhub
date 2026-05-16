@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#4f7d5a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="AguiarHub" />
-    <title>AguiarHub</title>
+    <meta name="apple-mobile-web-app-title" content="Barbara Beauty" />
+    <title>Barbara Beauty Gestão</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -25,8 +25,15 @@
     <div id="loginOverlay" class="login-overlay">
       <div class="login-modal">
         <div class="login-header">
-          <h1>AguiarHub</h1>
-          <p>Acesso de Funcionários</p>
+          <div class="login-brand brand">
+            <span class="brand-mark">A</span>
+            <div>
+              <strong>Barbara Beauty</strong>
+              <small>Acesso de Funcionários</small>
+            </div>
+          </div>
+          <h1 id="loginCompanyName">Barbara Beauty</h1>
+          <p id="loginSubtitle">Acesso de Funcionários</p>
         </div>
         <form id="loginForm" class="login-form">
           <label id="loginIdentifierField">
@@ -50,7 +57,7 @@
         <div class="brand">
           <span class="brand-mark">A</span>
           <div>
-            <strong>AguiarHub</strong>
+            <strong>Barbara Beauty</strong>
             <small>Administrador</small>
           </div>
         </div>
@@ -236,6 +243,7 @@
               <label>Cor escura <small>Cor do texto secundário e botões ghost</small><input id="settingGreenDark" type="color" /></label>
               <label>Fundo<input id="settingBeige" type="color" /></label>
               <label>Texto <small>Cor do texto principal</small><input id="settingInk" type="color" /></label>
+              <label>Cor da barra de alerta<input id="settingAlert" type="color" /></label>
               <label>Taxa Débito (%)<input id="taxaDebito" type="number" min="0" step="0.01" /></label>
               <label>Taxa Crédito (%)<input id="taxaCredito" type="number" min="0" step="0.01" /></label>
               <label>Desconto Dinheiro/Pix (%)<input id="descontoDinheiroPix" type="number" min="0" step="0.01" /></label>
@@ -244,7 +252,7 @@
             <div class="admin-preview">
               <span class="brand-mark" id="adminLogoPreview">A</span>
               <div>
-                <strong id="adminNamePreview">AguiarHub</strong>
+                <strong id="adminNamePreview">Barbara Beauty</strong>
                 <small id="adminSubtitlePreview">Administrador</small>
               </div>
               <button class="primary-button" type="button">Botão principal</button>
@@ -383,11 +391,8 @@
           <label>Cliente<select id="appointmentClient" required></select></label>
           <label class="checkbox"><input id="usePackage" type="checkbox" /> Usar pacote da cliente</label>
           <label class="package-field">Pacote<select id="appointmentPackage"></select></label>
-          <label class="package-field">Crédito usado
-            <select id="packageCreditType">
-              <option value="peMao">Pé e mão</option>
-              <option value="mao">Mão</option>
-            </select>
+          <label class="package-field">Serviço do pacote
+            <select id="packageCreditType"></select>
           </label>
           <div class="form-help package-field" id="packageHelp">Cadastre um pacote para a cliente antes de usar esta opção.</div>
           <label class="service-field">Serviço 1<select id="appointmentService"></select></label>
@@ -433,8 +438,7 @@
         <label>Cliente<select id="packageClient" required></select></label>
         <label>Nome do pacote<input id="packageName" value="Pacote mensal" required /></label>
         <label>Valor pago<input id="packageValue" type="number" min="0" step="0.01" required /></label>
-        <label>Créditos de pé e mão<input id="packagePeMao" type="number" min="0" step="1" value="2" required /></label>
-        <label>Créditos de mão<input id="packageMao" type="number" min="0" step="1" value="2" required /></label>
+        <div class="package-services" id="packageServices"></div>
         <label>Validade<input id="packageExpires" type="date" /></label>
         <footer>
           <button type="button" class="danger-button" id="deletePackage">Excluir pacote</button>

@@ -1,7 +1,7 @@
 {
-  "name": "Aguiar Hub Gestão",
-  "short_name": "Aguiar Hub",
-  "description": "Gestão de clientes, agenda, serviços e financeiro para Aguiar Hub nail designer.",
+  "name": "Barbara Beauty Gestão",
+  "short_name": "Barbara Beauty",
+  "description": "Gestão de clientes, agenda, serviços e financeiro para nail designer.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4efe6",
