@@ -1,0 +1,460 @@
+//na tela de pacotes criar recurso para excluir o pacote em caso de cadastro errado
+//criar uma solução para pagamento em dinheiro e pix com desconto e no cartão de debito e credito com taxa do banco em perceptual onde de pra ajustar manualmente // e ao concluir o serviço identificar como foi realizado o pagamento. da forma que esta ao concluir já vai automaticamente pro financeiro, e se ouver algum problema no pagamento colocar uma forma que não foi pago deixando um alerta esse alerta pode ser no roda pé da pagina com texto correndo da direita pra esquerda onde se clicar em cima já va direto para essa pendencia. e no calendário mascar com um sinaleiro vermelho de alerta junto da caixa de agendamento no calendário. o alerta tb para caso o agendamento esteja com status agendado porem o dia ja passou 
+//quando o serviço for concluído colocar na agenda um ícone de sinaleiro verde que pagou amarelo agendado laranja confirmado e vermelho não pago.
+// forma de pagamento dinehri pix cartao de cretido e debito (dinheiro e pix sem taxa e cartão com taxa ajustave em percetual) colocar um botão de pagamento abrindo uma aba para selecionar a forma de pagamento, pagamento efetuado automaticamente status umda para conclido. e se colocar status concluido abrir tb a aba de pagamento.
+// a senha deve conter 6 digitos nao pode ser menos que isso 
+// caso for necessario excluir um cliente. excluir mas mantendo as informações anteriores de agendamento pagamento sem prejudicar o financeiro nem o banco de dados. e o tipo de serviso tambem. 
+
+
+============================================================
+IDEIAS ORGANIZADAS – SISTEMA AGUIARHUB
+============================================================
+
+1. PACOTES
+- Adicionar botão "Excluir pacote" na visualização do pacote.
+- Modal de confirmação: "Deseja realmente excluir este pacote?"
+- Ao excluir: remover documento do pacote, NÃO deletar agendamentos vinculados (apenas perde referência).
+- Atualizar tela automaticamente.
+- (Futuro) Histórico de exclusões.
+
+2. SISTEMA DE PAGAMENTO
+Formas: Dinheiro, Pix, Cartão Débito, Cartão Crédito.
+Regras:
+- Dinheiro → desconto configurável (%)
+- Pix → desconto configurável (%)
+- Débito → taxa configurável (%)
+- Crédito → taxa configurável (%)
+
+Painel ADMIN (Configurações):
+- Taxa Débito (ex: 1.99)
+- Taxa Crédito (ex: 4.99)
+- Desconto Dinheiro/Pix (ex: 5.0)
+
+Cálculo exemplo (R$100):
+- Crédito 5% → taxa R$5 → líquido R$95
+- Dinheiro 5% desconto → desconto R$5 → líquido R$95
+
+Campos a armazenar no agendamento:
+- formaPagamento
+- statusPagamento ("pago", "pendente")
+- taxaPercentual
+- valorTaxa
+- valorBruto
+- valorLiquido
+- dataPagamento
+- observacoesPagamento
+
+3. FLUXO DE CONCLUSÃO DO SERVIÇO
+- Atualmente: ao mudar status para "Concluído" lança automático no financeiro.
+- Novo fluxo:
+  a) Usuário clica em "Concluir serviço" ou altera status para Concluído.
+  b) Abre Modal de Pagamento.
+  c) No modal: seleciona forma de pagamento, escolhe "Pago" ou "Não pago", vê valores.
+  d) Se Pago = Sim:
+     - statusPagamento = "pago"
+     - status = "Concluído"
+     - Gera entrada no financeiro (valor líquido)
+  e) Se Pago = Não:
+     - statusPagamento = "pendente"
+     - status NÃO muda para Concluído (permanece "Agendado" ou "Confirmado")
+     - NÃO gera financeiro
+     - Dispara alerta visual (rodapé + ícone vermelho)
+
+4. ALERTAS DE PAGAMENTO E ATRASO
+- Alertas para:
+   * Pagamentos pendentes
+   * Agendamentos com status "Agendado" ou "Confirmado" cuja data já passou
+- Rodapé com texto rolante (direita → esquerda):
+   * Mensagem: "⚠️ Cliente Maria – pagamento pendente | ⚠️ Cliente Joana – atrasou"
+   * Ao clicar, abrir o agendamento correspondente.
+   * Só aparece quando há pendências ou atrasos.
+- Calendário e lista de agendamentos: sinaleiro colorido:
+   * 🟢 Verde = Pago
+   * 🟡 Amarelo = Agendado (data futura)
+   * 🟠 Laranja = Confirmado (data futura)
+   * 🔴 Vermelho = Não pago ou atrasado (data passada e não concluído)
+
+5. BOTÃO DE PAGAMENTO INDEPENDENTE
+- Botão "Pagamento" em cada card de agendamento.
+- Abre o mesmo Modal de Pagamento.
+- Se pagamento confirmado (Pago = Sim):
+   * Muda status para "Concluído" se não estiver.
+   * Lança financeiro.
+- Integração: se usuário mudar status manualmente para "Concluído", também abrir modal de pagamento.
+
+6. EXCLUSÃO DE CLIENTE E SERVIÇO (sem perder histórico)
+- Cliente:
+   * Remover da lista de clientes.
+   * Manter agendamentos (nomeCliente já salvo) e financeiro.
+   * Pacotes ativos: excluir ou desvincular (com confirmação).
+   * Sugestão: usar campo "clienteAtivo" booleano em vez de deletar.
+- Serviço:
+   * Remover da lista de serviços ativos.
+   * Manter agendamentos antigos (nomeServico já salvo).
+   * Não afeta financeiro.
+   * Opção: apenas inativar (campo "ativo = false").
+
+7. VALIDAÇÃO DE SENHA (Funcionários)
+- Senha deve ter no mínimo 6 caracteres (dígitos ou letras).
+- Validar front-end e back-end (Firebase Auth já exige mínimo 6).
+
+8. PRIORIDADE DE IMPLEMENTAÇÃO (sugerida)
+1) Excluir pacote (com confirmação)
+2) Criar modal de pagamento + campos no agendamento
+3) Fluxo de conclusão com modal (substituir lançamento automático)
+4) Taxas configuráveis no Admin
+5) Botão "Pagamento" nos cards
+6) Alertas de pendência (rodapé rolante)
+7) Sinaleiros coloridos no calendário/lista
+8) Alerta de atraso (data passada + não concluído)
+9) Exclusão segura de cliente/serviço
+10) Validação de senha (6 dígitos)
+
+9. ESTRUTURA DE DADOS (resumo)
+agendamento: {
+  // campos existentes (id, clienteId, nomeCliente, valorFinal, status, etc.)
+  formaPagamento: "dinheiro" | "pix" | "debito" | "credito" | "",
+  statusPagamento: "pago" | "pendente",
+  taxaPercentual: number,
+  valorTaxa: number,
+  valorBruto: number,
+  valorLiquido: number,
+  dataPagamento: string (ISO date),
+  observacoesPagamento: string
+}
+
+configuracoes (dentro de settings): {
+  taxas: {
+    debito: 1.99,
+    credito: 4.99,
+    descontoDinheiroPix: 5.0
+  }
+}
+
+10. IDEIAS FUTURAS (SaaS / Evolução)
+- Relatórios por forma de pagamento (total PIX, total Cartão, taxas, lucro líquido).
+- Integração com gateways (InfinitePay, Mercado Pago, Stripe).
+- Assinatura mensal (SaaS) – controle de acesso e planos.
+- Notificações push (WhatsApp/e-mail) para lembretes de pagamento pendente.
+
+============================================================
+FIM DO DOCUMENTO
+============================================================
+
+✅ Resumo para o Desenvolvedor
+Implementar as funcionalidades acima respeitando a estrutura atual (localStorage com migração para Firebase). Manter compatibilidade com os dados existentes (adicionar campos com valores padrão). Usar as cores/sinaleiros definidos e garantir que o alerta rolante e os ícones no calendário fiquem visíveis tanto em desktop quanto mobile.
+
+
+
+
+
+============================================================
+SISTEMA AGUIARHUB – CORREÇÃO E IMPLEMENTAÇÃO
+FLUXO DE PAGAMENTO (ANTECIPADO vs CONCLUÍDO)
+============================================================
+
+PROBLEMA IDENTIFICADO:
+Registrar pagamento antecipado não deve marcar serviço como "Concluído".
+Status do serviço (Agendado, Confirmado, Concluído, Cancelado) é independente de statusPagamento (pago, pendente).
+
+CORREÇÃO APLICADA:
+
+1. SEPARAÇÃO DEFINITIVA DOS STATUS:
+   - status (operacional): controla o andamento do atendimento.
+   - statusPagamento (financeiro): controla se o cliente pagou.
+   - Ambos são independentes e visíveis na interface.
+
+2. REGRAS DE NEGÓCIO (NOVO COMPORTAMENTO):
+   a) Pagamento antecipado (antes do serviço):
+      - statusPagamento = "pago"
+      - Gera entrada no financeiro (valor líquido)
+      - status do serviço NÃO ALTERADO (permanece "Agendado" ou "Confirmado")
+      - Ícone no calendário: 🟢 (verde = pago, mas serviço ainda não feito)
+
+   b) Conclusão do serviço (após atendimento):
+      - Altera status para "Concluído"
+      - Se statusPagamento já for "pago", apenas conclui (não abre modal)
+      - Se statusPagamento for "pendente", opcionalmente abre modal de pagamento (pode registrar pagamento após concluir)
+
+   c) Pagamento registrado após serviço:
+      - status já "Concluído"
+      - statusPagamento muda para "pago"
+      - Cria/atualiza financeiro
+      - Ícone muda de 🔴 para 🟢
+
+   d) Serviço concluído sem pagamento:
+      - status = "Concluído"
+      - statusPagamento = "pendente"
+      - Gera alerta vermelho no rodapé e ícone 🔴
+
+3. ÍCONES E SINALEIROS (Calendário, Lista de Agendamentos)
+   Combinar status do serviço e status de pagamento:
+
+   | status (serviço) | statusPagamento | Ícone | Significado |
+   |------------------|----------------|-------|---------------|
+   | Agendado/Confirmado | pendente | 🟡 / 🟠 | Normal, agendado |
+   | Agendado/Confirmado | pago       | 🟢    | Cliente já pagou (aguardando atendimento) |
+   | Concluído         | pendente     | 🔴    | Serviço feito, mas não pago – URGENTE |
+   | Concluído         | pago         | 🟢    | Concluído e pago (ok) |
+   | Cancelado         | qualquer     | ⚫    | Cancelado (sem destaque) |
+
+4. ALERTAS ADICIONAIS:
+   - Se data de hoje > dataHoraInicio e status = "Agendado" ou "Confirmado" → alerta de ATRASO (rótulo especial no rodapé e ícone de relógio).
+   - Se status = "Concluído" e statusPagamento = "pendente" → alerta de PAGAMENTO PENDENTE (rodapé + vermelho).
+
+5. CAMPOS NO AGENDAMENTO (manter adicionais):
+   {
+     formaPagamento: "dinheiro"|"pix"|"debito"|"credito"|"",
+     statusPagamento: "pago"|"pendente",
+     taxaPercentual: number,
+     valorTaxa: number,
+     valorBruto: number,
+     valorLiquido: number,
+     dataPagamento: string (YYYY-MM-DD),
+     observacoesPagamento: string
+   }
+
+6. PAINEL ADMIN – TAXAS CONFIGURÁVEIS:
+   - Taxa Débito (%)
+   - Taxa Crédito (%)
+   - Desconto Dinheiro/Pix (%)
+   Armazenar em state.settings.taxas
+
+7. EXCLUSÃO DE PACOTE:
+   - Botão "Excluir" no card do pacote (admin/permissão)
+   - Modal de confirmação
+   - Remove apenas o documento do pacote; agendamentos mantêm referência (perdida, mas sem erro)
+   - Não afeta financeiro.
+
+8. EXCLUSÃO DE CLIENTE E SERVIÇO (sem prejudicar histórico):
+   - Cliente: removido da lista, mas agendamentos mantêm os dados do cliente (nome, telefone) como estavam no momento do agendamento.
+   - Serviço: removido da lista ativa, mas agendamentos antigos mantêm o nome e valor na época.
+
+9. VALIDAÇÃO DE SENHA (funcionários):
+   - Senha deve ter no mínimo 6 caracteres.
+   - Validar no front-end (app.js) e Firebase Auth já impõe.
+
+============================================================
+IMPLEMENTAÇÃO TÉCNICA (app.js – o que modificar)
+============================================================
+
+A) FUNÇÃO savePaymentAndClose() – corrigir para não alterar status
+---------------------------------------------------------------
+function savePaymentAndClose() {
+  const appointmentId = document.querySelector("#paymentAppointmentId").value;
+  const appointment = state.agendamentos.find(a => a.id === appointmentId);
+  if (!appointment) return;
+
+  const method = document.querySelector("#paymentMethod").value;
+  const statusPagamento = document.querySelector("#paymentStatus").value;
+  const dataPagamento = document.querySelector("#paymentDate").value;
+  const observacoesPagamento = document.querySelector("#paymentNotes").value;
+
+  if (!method) { toast("Selecione a forma de pagamento."); return; }
+
+  const { rate, taxAmount, netValue } = calculatePaymentValues(appointment.valorFinal, method);
+
+  // Atualiza SOMENTE campos de pagamento
+  appointment.formaPagamento = method;
+  appointment.statusPagamento = statusPagamento;
+  appointment.taxaPercentual = rate;
+  appointment.valorTaxa = taxAmount;
+  appointment.valorLiquido = netValue;
+  appointment.dataPagamento = dataPagamento;
+  appointment.observacoesPagamento = observacoesPagamento;
+
+  // Gerencia financeiro
+  if (statusPagamento === "pago") {
+    syncAppointmentFinance(appointment); // deve usar valorLiquido
+  } else {
+    state.financeiro = state.financeiro.filter(f => !(f.origem === "agendamento" && f.agendamentoId === appointment.id));
+    appointment.financeiroGerado = false;
+  }
+  save();
+  renderAll();
+  document.querySelector("#paymentModal").close();
+  toast(`Pagamento ${statusPagamento === "pago" ? "registrado" : "marcado como pendente"}.`);
+}
+
+B) FUNÇÃO syncAppointmentFinance() – ajustar para usar valorLiquido e não depender do status do serviço
+--------------------------------------------------------------------------------------------------------
+function syncAppointmentFinance(appointment) {
+  const existing = state.financeiro.find(f => f.origem === "agendamento" && f.agendamentoId === appointment.id);
+  if (appointment.statusPagamento !== "pago") {
+    if (existing) {
+      state.financeiro = state.financeiro.filter(f => f !== existing);
+      appointment.financeiroGerado = false;
+    }
+    return;
+  }
+  const payload = {
+    tipo: "entrada",
+    descricao: `Atendimento - ${appointmentServiceName(appointment)} - ${appointment.nomeCliente}`,
+    categoria: "Serviço",
+    valor: appointment.valorLiquido,
+    data: toDateInput(appointment.dataHoraInicio),
+    origem: "agendamento",
+    agendamentoId: appointment.id,
+  };
+  if (existing) {
+    Object.assign(existing, payload);
+  } else {
+    state.financeiro.push({ id: id(), ...payload, dataCadastro: new Date().toISOString() });
+    appointment.financeiroGerado = true;
+  }
+}
+
+C) FUNÇÃO updateAppointmentStatus() – não chamar modal se status for "Concluído" vindo de pagamento, mas separar fluxo
+-----------------------------------------------------------------------------------------------------------------------
+Manter como está, mas ao detectar que o novo status é "Concluído", NÃO abrir modal automaticamente. Apenas mudar status.
+Deixe o botão "Concluir" separado que abre modal de pagamento se necessário.
+
+D) BOTÃO "Concluir serviço" (adicione um botão específico no card ou ação)
+----------------------------------------------------------------------------
+Adicionar no appointmentCard:
+<button class="ghost-button" data-complete-appointment="${item.id}">✓ Concluir</button>
+
+E) EVENT LISTENER PARA CONCLUIR SERVIÇO
+----------------------------------------
+document.addEventListener("click", (e) => {
+  const completeBtn = e.target.closest("[data-complete-appointment]");
+  if (completeBtn) {
+    const appointmentId = completeBtn.dataset.completeAppointment;
+    const appointment = state.agendamentos.find(a => a.id === appointmentId);
+    if (appointment.status === "Concluído") {
+      toast("Serviço já está concluído.");
+      return;
+    }
+    if (appointment.statusPagamento === "pendente") {
+      // Se não pagou ainda, pergunta se quer registrar pagamento agora
+      if (confirm("Cliente ainda não pagou. Deseja registrar pagamento agora?")) {
+        openPaymentModal(appointmentId, () => {
+          // Após pagamento, concluir
+          appointment.status = "Concluído";
+          save();
+          renderAll();
+          toast("Serviço concluído.");
+        });
+        return;
+      }
+    }
+    // Se já pago ou optou por não pagar agora, apenas conclui
+    appointment.status = "Concluído";
+    save();
+    renderAll();
+    toast("Serviço concluído.");
+  }
+});
+
+F) MODAL DE PAGAMENTO – garantir que NÃO ALTERA status
+-------------------------------------------------------
+Na função openPaymentModal, certifique-se de que não há nenhuma linha mudando appointment.status.
+
+G) ÍCONES NO CALENDÁRIO E LISTA – função para obter o emoji correto
+---------------------------------------------------------------------
+function getStatusIcon(appointment) {
+  if (appointment.status === "Cancelado") return "⚫";
+  const hoje = new Date();
+  const dataServico = parseDate(appointment.dataHoraInicio);
+  const isAtrasado = (appointment.status === "Agendado" || appointment.status === "Confirmado") && dataServico < hoje;
+  if (isAtrasado) return "🔴"; // atrasado merece vermelho
+  if (appointment.statusPagamento === "pago") return "🟢";
+  if (appointment.status === "Concluído" && appointment.statusPagamento === "pendente") return "🔴";
+  if (appointment.status === "Agendado") return "🟡";
+  if (appointment.status === "Confirmado") return "🟠";
+  return "⚪";
+}
+
+Aplicar no appointmentCard e monthEvent.
+
+H) RODAPÉ DE ALERTAS (rolamento) – atualizar para mostrar pendências e atrasos
+--------------------------------------------------------------------------------
+function updatePaymentAlert() {
+  const hoje = new Date();
+  const pendentes = state.agendamentos.filter(a =>
+    (a.statusPagamento === "pendente" && a.status !== "Cancelado") ||
+    (a.status === "Concluído" && a.statusPagamento === "pendente") ||
+    ((a.status === "Agendado" || a.status === "Confirmado") && parseDate(a.dataHoraInicio) < hoje)
+  );
+  const alertDiv = document.querySelector("#paymentAlertBar");
+  if (pendentes.length === 0) {
+    alertDiv.style.display = "none";
+    return;
+  }
+  const messages = pendentes.map(a => {
+    if (parseDate(a.dataHoraInicio) < hoje && (a.status === "Agendado" || a.status === "Confirmado"))
+      return `⏰ ${a.nomeCliente} - atrasado (${new Date(a.dataHoraInicio).toLocaleDateString()})`;
+    if (a.statusPagamento === "pendente")
+      return `⚠️ ${a.nomeCliente} - pagamento pendente`;
+    return `⚠️ ${a.nomeCliente} - pendência`;
+  });
+  document.querySelector("#alertMessage").innerText = messages.join(" | ");
+  alertDiv.style.display = "block";
+}
+
+I) EXCLUSÃO DE PACOTE (adicionar botão no packageCard)
+--------------------------------------------------------
+<button class="danger-button" data-delete-package="${pacote.id}">Excluir pacote</button>
+
+E no evento:
+document.querySelector("[data-delete-package]")?.addEventListener("click", (e) => {
+  const id = e.target.dataset.deletePackage;
+  if (confirm("Excluir pacote permanentemente?")) {
+    state.pacotes = state.pacotes.filter(p => p.id !== id);
+    save();
+    renderAll();
+    toast("Pacote excluído.");
+  }
+});
+
+J) EXCLUSÃO DE CLIENTE (na função openClient já existe, mas ajustar para não deletar agendamentos)
+----------------------------------------------------------------------------------------------------
+Na exclusão (adicionar botão "Excluir cliente" no modal de cliente):
+if (confirm("Excluir cliente? Agendamentos passados serão mantidos, apenas cliente será removido.")) {
+  const clientId = document.querySelector("#clientId").value;
+  state.clientes = state.clientes.filter(c => c.id !== clientId);
+  // Não tocar nos agendamentos (já possuem nomeCliente)
+  save();
+  renderAll();
+  toast("Cliente removido.");
+}
+
+K) VALIDAÇÃO DE SENHA (no formulário de funcionário)
+-----------------------------------------------------
+No submit do employeeForm, antes de enviar:
+const password = document.querySelector("#employeePassword").value;
+if (password && password.length < 6) {
+  toast("A senha deve ter pelo menos 6 caracteres.");
+  return;
+}
+
+L) MIGRAÇÃO DE DADOS EXISTENTES (adicionar campos de pagamento)
+-----------------------------------------------------------------
+Adicionar no migrateState():
+state.agendamentos.forEach(a => {
+  if (a.statusPagamento === undefined) {
+    a.statusPagamento = (a.status === "Concluído" ? "pago" : "pendente"); // legado: concluído assume pago
+    a.formaPagamento = "";
+    a.taxaPercentual = 0;
+    a.valorTaxa = 0;
+    a.valorBruto = a.valorFinal;
+    a.valorLiquido = a.valorFinal;
+    a.dataPagamento = a.status === "Concluído" ? toDateInput(new Date()) : null;
+    a.observacoesPagamento = "";
+  }
+});
+
+============================================================
+RESUMO PARA O DESENVOLVEDOR
+============================================================
+- Implementar as correções acima garantindo que pagamento antecipado NÃO altera status do serviço.
+- Manter localStorage e compatibilidade com Firebase.
+- Os ícones de status devem seguir a tabela definida.
+- O alerta rolante deve mostrar tanto pagamentos pendentes quanto agendamentos atrasados.
+- Adicionar botão "Concluir serviço" ao lado de "Pagamento".
+- Validar senha com mínimo 6 dígitos.
+- Exclusão de cliente/serviço/pacote devem ser seguras e não corromper histórico.
+
+============================================================
+FIM DO DOCUMENTO
+============================================================

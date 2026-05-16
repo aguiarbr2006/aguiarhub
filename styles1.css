@@ -421,12 +421,6 @@ textarea:focus-visible {
   font-size: 17px;
 }
 
-.status-light {
-  display: inline-flex;
-  width: 1.35em;
-  justify-content: center;
-}
-
 .muted {
   color: var(--muted);
 }
@@ -609,60 +603,6 @@ textarea:focus-visible {
 .month-event small {
   color: var(--muted);
   margin-top: 4px;
-}
-
-.payment-summary {
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
-  display: grid;
-  gap: 6px;
-}
-
-.payment-alert-bar {
-  display: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 30;
-  overflow: hidden;
-  background: #8a3030;
-  color: white;
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-.payment-alert-track {
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
-  min-width: max-content;
-  padding: 9px 0;
-  animation: alert-marquee 28s linear infinite;
-}
-
-.payment-alert-track button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.alert-separator {
-  opacity: 0.72;
-}
-
-@keyframes alert-marquee {
-  from {
-    transform: translateX(100vw);
-  }
-  to {
-    transform: translateX(-100%);
-  }
 }
 
 dialog {

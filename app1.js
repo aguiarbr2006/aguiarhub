@@ -6,7 +6,7 @@ const currency = new Intl.NumberFormat("pt-BR", {
 });
 
 const DEFAULT_SETTINGS = {
-  companyName: "Rayssa Oliveira",
+  companyName: "Aguiar Hub",
   subtitle: "Nail designer",
   logoText: "R",
   logoImage: "",
@@ -16,11 +16,6 @@ const DEFAULT_SETTINGS = {
     greenDark: "#2f4f3a",
     beige: "#f4efe6",
     ink: "#2b2b2b",
-  },
-  taxas: {
-    debito: 1.99,
-    credito: 4.99,
-    descontoDinheiroPix: 5,
   },
 };
 
@@ -39,7 +34,6 @@ let pendingRemoteSave = null;
 let deferredInstallPrompt = null;
 let currentUser = null;
 let userPermissions = {};
-let afterPaymentSaveCallback = null;
 
 const pages = {
   dashboard: {
@@ -437,7 +431,7 @@ function initRemoteSync() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
     remoteDb = firebase.firestore();
-    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/firebase");
+    remoteDocRef = remoteDb.doc(window.FIREBASE_DOC_PATH || "sistemas/aguiarhub");
 
     remoteDocRef.onSnapshot(
       (snapshot) => {
@@ -495,35 +489,12 @@ function migrateState() {
       ...DEFAULT_SETTINGS.colors,
       ...(state.settings?.colors || {}),
     },
-    taxas: {
-      ...DEFAULT_SETTINGS.taxas,
-      ...(state.settings?.taxas || {}),
-    },
   };
   state.clientes ||= [];
   state.servicos ||= [];
   state.agendamentos ||= [];
   state.financeiro ||= [];
   state.pacotes ||= [];
-  state.clientes.forEach((cliente) => {
-    if (cliente.clienteAtivo === undefined) cliente.clienteAtivo = true;
-  });
-  state.servicos.forEach((servico) => {
-    if (servico.ativo === undefined) servico.ativo = true;
-  });
-  state.agendamentos.forEach((appointment) => {
-    const hasFinance = state.financeiro.some((entry) => entry.origem === "agendamento" && entry.agendamentoId === appointment.id);
-    const paidByHistory = appointment.status === "Concluído" || hasFinance || appointment.usarPacote;
-    if (appointment.statusPagamento === undefined) appointment.statusPagamento = paidByHistory ? "pago" : "pendente";
-    appointment.formaPagamento ||= "";
-    appointment.taxaPercentual = Number(appointment.taxaPercentual || 0);
-    appointment.valorTaxa = Number(appointment.valorTaxa || 0);
-    appointment.valorBruto = Number(appointment.valorBruto ?? appointment.valorFinal ?? 0);
-    appointment.valorLiquido = Number(appointment.valorLiquido ?? appointment.valorFinal ?? 0);
-    appointment.dataPagamento ||= paidByHistory ? toDateInput(appointment.dataHoraInicio || new Date()) : "";
-    appointment.observacoesPagamento ||= "";
-    appointment.financeiroGerado = hasFinance;
-  });
   state.pacotes.forEach((pacote) => {
     pacote.peMaoTotal = Number(pacote.peMaoTotal || 0);
     pacote.maoTotal = Number(pacote.maoTotal || 0);
@@ -580,9 +551,6 @@ function renderAdminSettings() {
   document.querySelector("#settingGreenDark").value = settings.colors.greenDark;
   document.querySelector("#settingBeige").value = settings.colors.beige;
   document.querySelector("#settingInk").value = settings.colors.ink;
-  document.querySelector("#taxaDebito").value = settings.taxas.debito;
-  document.querySelector("#taxaCredito").value = settings.taxas.credito;
-  document.querySelector("#descontoDinheiroPix").value = settings.taxas.descontoDinheiroPix;
   document.querySelector("#settingDeveloperCredit").value = settings.developerCredit;
   document.querySelector("#adminNamePreview").textContent = settings.companyName;
   document.querySelector("#adminSubtitlePreview").textContent = settings.subtitle;
@@ -659,18 +627,6 @@ function calculateFinalValue(price, type, discountValue) {
   return base;
 }
 
-function calculatePaymentValues(value, method) {
-  const grossValue = Number(value || 0);
-  const taxas = state.settings.taxas || DEFAULT_SETTINGS.taxas;
-  let rate = 0;
-  if (method === "debito") rate = Number(taxas.debito || 0);
-  if (method === "credito") rate = Number(taxas.credito || 0);
-  if (method === "dinheiro" || method === "pix") rate = Number(taxas.descontoDinheiroPix || 0);
-  const taxAmount = grossValue * (rate / 100);
-  const netValue = Math.max(0, grossValue - taxAmount);
-  return { rate, taxAmount, grossValue, netValue };
-}
-
 function getSelectedService() {
   return state.servicos.find((service) => service.id === document.querySelector("#appointmentService").value);
 }
@@ -732,7 +688,6 @@ function recomputePackageUsage() {
       else pacote.peMaoUsado += 1;
     });
   state.pacotes.forEach((pacote) => {
-    if (pacote.status === "excluido") return;
     const finished = packageRemaining(pacote, "peMao") <= 0 && packageRemaining(pacote, "mao") <= 0;
     pacote.status = finished ? "finalizado" : "ativo";
   });
@@ -773,23 +728,6 @@ function syncPackageFinance(pacote) {
       dataCadastro: new Date().toISOString(),
     });
   }
-}
-
-function deletePackage(packageId, closeModal = false) {
-  const pacote = state.pacotes.find((item) => item.id === packageId);
-  if (!pacote) return;
-  if (!confirm("Deseja realmente excluir este pacote?")) return;
-  state.pacotes = state.pacotes.filter((item) => item.id !== packageId);
-  state.agendamentos
-    .filter((appointment) => appointment.pacoteId === packageId)
-    .forEach((appointment) => {
-      appointment.pacoteId = "";
-    });
-  recomputePackageUsage();
-  save();
-  if (closeModal) document.querySelector("#packageModal").close();
-  renderAll();
-  toast("Pacote excluído.");
 }
 
 let lastConflictSuggestion = null;
@@ -843,7 +781,7 @@ function getNextAvailableSlot(candidate, conflict) {
 function syncAppointmentFinance(appointment) {
   const existingFinance = state.financeiro.find((entry) => entry.origem === "agendamento" && entry.agendamentoId === appointment.id);
 
-  if (appointment.statusPagamento !== "pago" || appointment.usarPacote) {
+  if (appointment.status !== "Concluído" || appointment.usarPacote) {
     state.financeiro = state.financeiro.filter((entry) => !(entry.origem === "agendamento" && entry.agendamentoId === appointment.id));
     appointment.financeiroGerado = false;
     return existingFinance ? "removed" : "none";
@@ -853,8 +791,8 @@ function syncAppointmentFinance(appointment) {
     tipo: "entrada",
     descricao: `Atendimento - ${appointmentServiceName(appointment)} - ${appointment.nomeCliente}`,
     categoria: "Serviço",
-    valor: Number(appointment.valorLiquido ?? appointment.valorFinal ?? 0),
-    data: appointment.dataPagamento || toDateInput(appointment.dataHoraInicio),
+    valor: appointment.valorFinal,
+    data: toDateInput(appointment.dataHoraInicio),
     origem: "agendamento",
     agendamentoId: appointment.id,
   };
@@ -899,7 +837,6 @@ function renderAll() {
   renderFinance();
   renderPackages();
   renderEmployees();
-  updatePaymentAlert();
   updateNavigationVisibility();
   fillSelects();
 }
@@ -987,10 +924,9 @@ function renderMonthCalendar() {
 function monthEvent(appointment) {
   const start = parseDate(appointment.dataHoraInicio);
   const end = parseDate(appointment.dataHoraFim);
-  const icon = getStatusIcon(appointment);
   return `
     <button class="month-event" data-edit-appointment="${appointment.id}">
-      <strong>${icon} ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong>
+      <strong>${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong>
       <span>${escapeHtml(appointment.nomeCliente)}</span>
       <small>${escapeHtml(appointmentServiceName(appointment))}</small>
     </button>
@@ -1104,24 +1040,20 @@ function renderAppointments() {
 function appointmentCard(item) {
   const start = parseDate(item.dataHoraInicio);
   const end = parseDate(item.dataHoraFim);
-  const statusIcon = getStatusIcon(item);
   return `
     <article class="item-card">
       <div class="item-row">
         <div>
-          <h3 class="item-title"><span class="status-light" title="${escapeHtml(paymentStatusLabel(item))}">${statusIcon}</span> ${escapeHtml(item.nomeCliente)}</h3>
+          <h3 class="item-title">${escapeHtml(item.nomeCliente)}</h3>
           <div class="muted">${start.toLocaleDateString("pt-BR")} · ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às ${end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
         </div>
         <span class="badge ${statusClass(item.status)}">${item.status}</span>
       </div>
       <div>${escapeHtml(appointmentServiceName(item))} · <strong>${item.usarPacote ? "Pacote pré-pago" : money(item.valorFinal)}</strong></div>
-      <div class="muted">${escapeHtml(paymentStatusLabel(item))}${item.statusPagamento === "pago" && !item.usarPacote ? ` · líquido ${money(item.valorLiquido)}` : ""}</div>
       ${item.usarPacote ? `<div class="badge">Pacote: ${escapeHtml(packageCreditLabel(item.tipoCreditoPacote))}</div>` : ""}
       <div class="muted">${escapeHtml(item.telefone || "")}</div>
       <div class="actions">
         <button class="ghost-button" data-edit-appointment="${item.id}">Editar</button>
-        ${item.usarPacote ? "" : `<button class="ghost-button" data-payment-appointment="${item.id}">Pagamento</button>`}
-        <button class="ghost-button" data-complete-appointment="${item.id}">Concluir</button>
         <button class="ghost-button" data-whatsapp-appointment="${item.id}">WhatsApp</button>
         <select data-status-appointment="${item.id}" aria-label="Alterar status">
           ${["Agendado", "Confirmado", "Concluído", "Cancelado"].map((status) => `<option ${status === item.status ? "selected" : ""}>${status}</option>`).join("")}
@@ -1134,7 +1066,6 @@ function appointmentCard(item) {
 function renderClients() {
   const search = normalize(document.querySelector("#clientSearch").value);
   const filtered = state.clientes
-    .filter((c) => c.clienteAtivo !== false)
     .filter((c) => !search || normalize(`${c.nome} ${c.telefone}`).includes(search))
     .sort((a, b) => a.nome.localeCompare(b.nome));
   document.querySelector("#clientList").innerHTML = filtered.length
@@ -1169,7 +1100,6 @@ function clientCard(client) {
 function renderServices() {
   const search = normalize(document.querySelector("#serviceSearch").value);
   const filtered = state.servicos
-    .filter((s) => s.ativo !== false)
     .filter((s) => !search || normalize(s.nome).includes(search))
     .sort((a, b) => a.nome.localeCompare(b.nome));
   document.querySelector("#serviceList").innerHTML = filtered.length
@@ -1183,7 +1113,6 @@ function renderServices() {
 function renderPackages() {
   const search = normalize(document.querySelector("#packageSearch")?.value || "");
   const filtered = state.pacotes
-    .filter((pacote) => pacote.status !== "excluido")
     .filter((pacote) => !search || normalize(`${pacote.nome} ${pacote.nomeCliente}`).includes(search))
     .sort((a, b) => String(b.dataCompra || "").localeCompare(String(a.dataCompra || "")));
   document.querySelector("#packageList").innerHTML = filtered.length
@@ -1339,7 +1268,6 @@ function packageCard(pacote) {
       <div>Mão: <strong>${maoRestante}</strong> de ${pacote.maoTotal} restante(s)</div>
       <div class="actions">
         <button class="ghost-button" data-edit-package="${pacote.id}">Editar</button>
-        <button class="danger-button" data-delete-package="${pacote.id}">Excluir pacote</button>
       </div>
     </article>
   `;
@@ -1431,7 +1359,7 @@ function fillAppointmentPackages() {
     updatePackageModeFields();
     return;
   }
-  const packages = state.pacotes.filter((pacote) => pacote.clienteId === clientId && pacote.status === "ativo");
+  const packages = state.pacotes.filter((pacote) => pacote.clienteId === clientId && pacote.status !== "finalizado");
   if (!packages.length) {
     packageSelect.innerHTML = `<option value="">Cliente sem pacote ativo</option>`;
     packageSelect.disabled = true;
@@ -1480,7 +1408,6 @@ function openClient(clientId = "") {
   document.querySelector("#clientName").value = client?.nome || "";
   document.querySelector("#clientPhone").value = client?.telefone || "";
   document.querySelector("#clientNotes").value = client?.observacoes || "";
-  document.querySelector("#deleteClient").style.visibility = client ? "visible" : "hidden";
   document.querySelector("#clientModal").showModal();
 }
 
@@ -1491,7 +1418,6 @@ function openService(serviceId = "") {
   document.querySelector("#servicePrice").value = service?.valorPadrao ?? "";
   document.querySelector("#serviceDuration").value = service?.duracaoMinutos || 60;
   document.querySelector("#serviceActive").checked = service?.ativo ?? true;
-  document.querySelector("#deleteService").style.visibility = service ? "visible" : "hidden";
   document.querySelector("#serviceModal").showModal();
 }
 
@@ -1505,7 +1431,6 @@ function openPackage(packageId = "") {
   document.querySelector("#packagePeMao").value = pacote?.peMaoTotal ?? 2;
   document.querySelector("#packageMao").value = pacote?.maoTotal ?? 2;
   document.querySelector("#packageExpires").value = pacote?.validade || "";
-  document.querySelector("#deletePackage").style.visibility = pacote ? "visible" : "hidden";
   document.querySelector("#packageModal").showModal();
 }
 
@@ -1549,77 +1474,12 @@ function openFinance(financeId = "") {
   document.querySelector("#financeModal").showModal();
 }
 
-function openPaymentModal(appointmentId, afterSave = null) {
-  const appointment = state.agendamentos.find((item) => item.id === appointmentId);
-  if (!appointment) return;
-  afterPaymentSaveCallback = typeof afterSave === "function" ? afterSave : null;
-  document.querySelector("#paymentAppointmentId").value = appointment.id;
-  document.querySelector("#paymentMethod").value = appointment.formaPagamento || "";
-  document.querySelector("#paymentStatus").value = appointment.statusPagamento || "pendente";
-  document.querySelector("#paymentDate").value = appointment.dataPagamento || toDateInput(new Date());
-  document.querySelector("#paymentNotes").value = appointment.observacoesPagamento || "";
-  document.querySelector("#paymentSummary").innerHTML = `
-    <strong>${escapeHtml(appointment.nomeCliente)}</strong>
-    <span>${escapeHtml(appointmentServiceName(appointment))}</span>
-    <span>Valor bruto: <strong>${money(appointment.valorFinal)}</strong></span>
-  `;
-  updatePaymentPreview();
-  document.querySelector("#paymentModal").showModal();
-}
-
-function updatePaymentPreview() {
-  const appointmentId = document.querySelector("#paymentAppointmentId")?.value;
-  const appointment = state.agendamentos.find((item) => item.id === appointmentId);
-  const method = document.querySelector("#paymentMethod")?.value || "";
-  const preview = document.querySelector("#paymentPreview");
-  if (!appointment || !preview) return;
-  const { rate, taxAmount, netValue } = calculatePaymentValues(appointment.valorFinal, method);
-  const rateLabel = method === "dinheiro" || method === "pix" ? "desconto" : "taxa";
-  preview.innerHTML = `${rateLabel}: <strong>${rate.toFixed(2)}%</strong> · abatimento: <strong>${money(taxAmount)}</strong> · líquido: <strong>${money(netValue)}</strong>`;
-}
-
-function savePaymentAndClose() {
-  const appointmentId = document.querySelector("#paymentAppointmentId").value;
-  const appointment = state.agendamentos.find((item) => item.id === appointmentId);
-  if (!appointment) return;
-  const method = document.querySelector("#paymentMethod").value;
-  const statusPagamento = document.querySelector("#paymentStatus").value;
-  const dataPagamento = document.querySelector("#paymentDate").value || toDateInput(new Date());
-  const observacoesPagamento = document.querySelector("#paymentNotes").value.trim();
-
-  if (statusPagamento === "pago" && !method) {
-    toast("Selecione a forma de pagamento.");
-    return;
-  }
-
-  const { rate, taxAmount, grossValue, netValue } = calculatePaymentValues(appointment.valorFinal, method);
-  appointment.formaPagamento = statusPagamento === "pago" ? method : "";
-  appointment.statusPagamento = statusPagamento;
-  appointment.taxaPercentual = rate;
-  appointment.valorTaxa = taxAmount;
-  appointment.valorBruto = grossValue;
-  appointment.valorLiquido = netValue;
-  appointment.dataPagamento = dataPagamento;
-  appointment.observacoesPagamento = observacoesPagamento;
-
-  const financeAction = syncAppointmentFinance(appointment);
-  const callback = afterPaymentSaveCallback;
-  afterPaymentSaveCallback = null;
-  if (callback) callback(appointment);
-  save();
-  renderAll();
-  document.querySelector("#paymentModal").close();
-  if (financeAction === "created") toast("Pagamento registrado e entrada financeira criada.");
-  else if (financeAction === "updated") toast("Pagamento atualizado no financeiro.");
-  else if (financeAction === "removed") toast("Pagamento marcado como pendente e financeiro removido.");
-  else toast(`Pagamento ${statusPagamento === "pago" ? "registrado" : "marcado como pendente"}.`);
-}
-
 function updateAppointmentStatus(appointmentId, status) {
   const appointment = state.agendamentos.find((a) => a.id === appointmentId);
   if (!appointment) return;
-  if (status === "Concluído") {
-    completeAppointment(appointmentId, true);
+  if (status === "Concluído" && appointment.usarPacote && packageAvailability(appointment.pacoteId, appointment.tipoCreditoPacote, appointment.id) <= 0) {
+    renderAppointments();
+    toast(`Este pacote não tem crédito disponível de ${packageCreditLabel(appointment.tipoCreditoPacote)}.`);
     return;
   }
   const candidate = { ...appointment, status };
@@ -1630,45 +1490,14 @@ function updateAppointmentStatus(appointmentId, status) {
     return;
   }
   appointment.status = status;
+  const financeAction = syncAppointmentFinance(appointment);
   recomputePackageUsage();
   save();
   renderAll();
-  toast("Status atualizado.");
-}
-
-function completeAppointment(appointmentId, fromStatusSelect = false) {
-  const appointment = state.agendamentos.find((a) => a.id === appointmentId);
-  if (!appointment) return;
-  if (appointment.status === "Concluído") {
-    toast("Serviço já está concluído.");
-    if (fromStatusSelect) renderAppointments();
-    return;
-  }
-  if (appointment.usarPacote && appointment.pacoteId && packageAvailability(appointment.pacoteId, appointment.tipoCreditoPacote, appointment.id) <= 0) {
-    renderAppointments();
-    toast(`Este pacote não tem crédito disponível de ${packageCreditLabel(appointment.tipoCreditoPacote)}.`);
-    return;
-  }
-  const candidate = { ...appointment, status: "Concluído" };
-  const conflict = getScheduleConflict(candidate);
-  if (conflict) {
-    showConflictDialog(conflict);
-    renderAppointments();
-    return;
-  }
-  const finish = () => {
-    appointment.status = "Concluído";
-    if (appointment.usarPacote) appointment.statusPagamento = "pago";
-    recomputePackageUsage();
-    save();
-    renderAll();
-    toast("Serviço concluído.");
-  };
-  if (!appointment.usarPacote && appointment.statusPagamento === "pendente" && confirm("Cliente ainda não pagou. Deseja registrar pagamento agora?")) {
-    openPaymentModal(appointmentId, finish);
-    return;
-  }
-  finish();
+  if (financeAction === "created") toast("Entrada criada no financeiro automaticamente.");
+  else if (financeAction === "updated") toast("Entrada financeira atualizada automaticamente.");
+  else if (financeAction === "removed") toast("Entrada removida do financeiro automaticamente.");
+  else toast("Status atualizado.");
 }
 
 function sendAppointmentWhatsapp(appointmentId) {
@@ -1686,7 +1515,7 @@ function sendAppointmentWhatsapp(appointmentId) {
     `Olá, ${appointment.nomeCliente}!`,
     "",
     "Segue seu comprovante de agendamento:",
-    `Nail designer: Rayssa Oliveira`,
+    `Nail designer: Aguiar Hub`,
     `Serviço: ${appointmentServiceName(appointment)}`,
     `Data: ${start.toLocaleDateString("pt-BR")}`,
     `Chegada: ${start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} com 15 minutos de tolerância para atraso`,
@@ -1752,63 +1581,6 @@ function statusClass(status) {
   return normalize(status).replace("í", "i");
 }
 
-function isAppointmentLate(appointment) {
-  return ["Agendado", "Confirmado"].includes(appointment.status) && parseDate(appointment.dataHoraInicio) < new Date();
-}
-
-function getStatusIcon(appointment) {
-  if (appointment.status === "Cancelado") return "⚫";
-  if (isAppointmentLate(appointment)) return "🔴";
-  if (appointment.statusPagamento === "pago") return "🟢";
-  if (appointment.status === "Concluído" && appointment.statusPagamento === "pendente") return "🔴";
-  if (appointment.status === "Agendado") return "🟡";
-  if (appointment.status === "Confirmado") return "🟠";
-  return "⚪";
-}
-
-function paymentStatusLabel(appointment) {
-  if (appointment.usarPacote) return "Pacote pré-pago";
-  return appointment.statusPagamento === "pago"
-    ? `Pago${appointment.formaPagamento ? ` · ${paymentMethodLabel(appointment.formaPagamento)}` : ""}`
-    : "Pagamento pendente";
-}
-
-function paymentMethodLabel(method) {
-  return {
-    dinheiro: "Dinheiro",
-    pix: "Pix",
-    debito: "Cartão débito",
-    credito: "Cartão crédito",
-  }[method] || "";
-}
-
-function updatePaymentAlert() {
-  const alertDiv = document.querySelector("#paymentAlertBar");
-  const alertMessage = document.querySelector("#alertMessage");
-  if (!alertDiv || !alertMessage) return;
-  const alerts = state.agendamentos
-    .filter((appointment) => appointment.status !== "Cancelado")
-    .filter((appointment) => appointment.statusPagamento === "pendente" || isAppointmentLate(appointment))
-    .sort((a, b) => a.dataHoraInicio.localeCompare(b.dataHoraInicio));
-
-  if (!alerts.length) {
-    alertDiv.style.display = "none";
-    alertMessage.innerHTML = "";
-    return;
-  }
-
-  alertMessage.innerHTML = alerts
-    .map((appointment) => {
-      const late = isAppointmentLate(appointment);
-      const text = late
-        ? `⏰ ${appointment.nomeCliente} - atrasou (${parseDate(appointment.dataHoraInicio).toLocaleDateString("pt-BR")})`
-        : `⚠️ ${appointment.nomeCliente} - pagamento pendente`;
-      return `<button type="button" data-edit-appointment="${appointment.id}">${escapeHtml(text)}</button>`;
-    })
-    .join(`<span class="alert-separator">|</span>`);
-  alertDiv.style.display = "block";
-}
-
 function empty(message) {
   return `<div class="empty">${message}</div>`;
 }
@@ -1822,7 +1594,6 @@ function bindForms() {
       nome: document.querySelector("#clientName").value.trim(),
       telefone: document.querySelector("#clientPhone").value.trim(),
       observacoes: document.querySelector("#clientNotes").value.trim(),
-      clienteAtivo: true,
       dataCadastro: new Date().toISOString(),
     };
     if (clientId) {
@@ -1946,14 +1717,6 @@ function bindForms() {
       usarPacote,
       pacoteId: usarPacote ? pacoteId : "",
       tipoCreditoPacote: usarPacote ? tipoCreditoPacote : "",
-      formaPagamento: usarPacote ? "" : existing?.formaPagamento || "",
-      statusPagamento: usarPacote ? "pago" : existing?.statusPagamento || "pendente",
-      taxaPercentual: existing?.taxaPercentual || 0,
-      valorTaxa: existing?.valorTaxa || 0,
-      valorBruto: finalValue,
-      valorLiquido: usarPacote ? 0 : existing?.valorLiquido ?? finalValue,
-      dataPagamento: usarPacote ? toDateInput(start) : existing?.dataPagamento || "",
-      observacoesPagamento: existing?.observacoesPagamento || "",
       financeiroGerado: existing?.financeiroGerado || false,
       dataCadastro: existing?.dataCadastro || new Date().toISOString(),
     };
@@ -1970,19 +1733,15 @@ function bindForms() {
     } else {
       state.agendamentos.push(payload);
     }
-    if (savedAppointment.statusPagamento === "pago" && !savedAppointment.usarPacote) {
-      const paymentValues = calculatePaymentValues(savedAppointment.valorFinal, savedAppointment.formaPagamento);
-      savedAppointment.taxaPercentual = paymentValues.rate;
-      savedAppointment.valorTaxa = paymentValues.taxAmount;
-      savedAppointment.valorBruto = paymentValues.grossValue;
-      savedAppointment.valorLiquido = paymentValues.netValue;
-    }
-    syncAppointmentFinance(savedAppointment);
+    const financeAction = syncAppointmentFinance(savedAppointment);
     recomputePackageUsage();
     save();
     document.querySelector("#appointmentModal").close();
     renderAll();
-    toast("Agendamento salvo.");
+    if (financeAction === "created") toast("Agendamento salvo e entrada financeira criada.");
+    else if (financeAction === "updated") toast("Agendamento salvo e financeiro atualizado.");
+    else if (financeAction === "removed") toast("Agendamento salvo e financeiro removido.");
+    else toast("Agendamento salvo.");
   });
 
   document.querySelector("#financeForm").addEventListener("submit", (event) => {
@@ -2007,11 +1766,6 @@ function bindForms() {
     toast("Lançamento salvo.");
   });
 
-  document.querySelector("#paymentForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    savePaymentAndClose();
-  });
-
   document.querySelector("#adminForm").addEventListener("submit", (event) => {
     event.preventDefault();
     state.settings.companyName = document.querySelector("#settingCompanyName").value.trim() || DEFAULT_SETTINGS.companyName;
@@ -2021,11 +1775,6 @@ function bindForms() {
     state.settings.colors.greenDark = document.querySelector("#settingGreenDark").value;
     state.settings.colors.beige = document.querySelector("#settingBeige").value;
     state.settings.colors.ink = document.querySelector("#settingInk").value;
-    state.settings.taxas = {
-      debito: Number(document.querySelector("#taxaDebito").value || 0),
-      credito: Number(document.querySelector("#taxaCredito").value || 0),
-      descontoDinheiroPix: Number(document.querySelector("#descontoDinheiroPix").value || 0),
-    };
     save();
     renderAll();
     toast("Configurações salvas.");
@@ -2045,14 +1794,6 @@ function bindForms() {
     const username = document.querySelector("#employeeUsername").value.trim();
     const email = document.querySelector("#employeeEmail").value.trim();
     const password = document.querySelector("#employeePassword").value;
-    if (password && password.length < 6) {
-      toast("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-    if (!employeeId && password.length < 6) {
-      toast("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
 
     const permissions = {
       viewDashboard: document.querySelector("#permViewDashboard").checked,
@@ -2111,14 +1852,16 @@ function bindButtons() {
   document.addEventListener("click", (event) => {
     const editButton = event.target.closest("[data-edit-appointment]");
     if (editButton) openAppointment(editButton.dataset.editAppointment);
-    const paymentButton = event.target.closest("[data-payment-appointment]");
-    if (paymentButton) openPaymentModal(paymentButton.dataset.paymentAppointment);
-    const completeButton = event.target.closest("[data-complete-appointment]");
-    if (completeButton) completeAppointment(completeButton.dataset.completeAppointment);
     const whatsappButton = event.target.closest("[data-whatsapp-appointment]");
     if (whatsappButton) sendAppointmentWhatsapp(whatsappButton.dataset.whatsappAppointment);
-    const deletePackageButton = event.target.closest("[data-delete-package]");
-    if (deletePackageButton) deletePackage(deletePackageButton.dataset.deletePackage);
+  // entrada com botao de demonstração para facilitar testes sem precisar criar usuário
+//      document.querySelector("#demoLoginBtn")?.addEventListener("click", () => {
+//    currentUser = { uid: "demo" };
+//    userPermissions = { admin: true };
+//    showApp();
+//    renderAll();
+// });
+//.. fim do codigo de demonstração
   });
 
   document.querySelector("#openClientModal").addEventListener("click", () => openClient());
@@ -2183,40 +1926,6 @@ function bindButtons() {
     toast("Agendamento excluído.");
   });
 
-  document.querySelector("#deleteClient").addEventListener("click", () => {
-    const clientId = document.querySelector("#clientId").value;
-    if (!clientId) return;
-    if (!confirm("Excluir cliente? Agendamentos passados serão mantidos, apenas cliente será removido da lista.")) return;
-    const client = state.clientes.find((item) => item.id === clientId);
-    if (client) client.clienteAtivo = false;
-    state.pacotes
-      .filter((pacote) => pacote.clienteId === clientId && pacote.status !== "finalizado")
-      .forEach((pacote) => {
-        pacote.status = "excluido";
-      });
-    save();
-    document.querySelector("#clientModal").close();
-    renderAll();
-    toast("Cliente removido da lista.");
-  });
-
-  document.querySelector("#deleteService").addEventListener("click", () => {
-    const serviceId = document.querySelector("#serviceId").value;
-    if (!serviceId) return;
-    if (!confirm("Excluir serviço? Agendamentos antigos serão mantidos com o nome do serviço.")) return;
-    const service = state.servicos.find((item) => item.id === serviceId);
-    if (service) service.ativo = false;
-    save();
-    document.querySelector("#serviceModal").close();
-    renderAll();
-    toast("Serviço removido da lista.");
-  });
-
-  document.querySelector("#deletePackage").addEventListener("click", () => {
-    const packageId = document.querySelector("#packageId").value;
-    if (packageId) deletePackage(packageId, true);
-  });
-
   document.querySelector("#deleteFinance").addEventListener("click", () => {
     const financeId = document.querySelector("#financeId").value;
     state.financeiro = state.financeiro.filter((f) => f.id !== financeId);
@@ -2231,8 +1940,6 @@ function bindButtons() {
   document.querySelector("#backupFile").addEventListener("change", importBackup);
   document.querySelector("#installApp").addEventListener("click", installApp);
   document.querySelector("#exportPdf").addEventListener("click", exportPdf);
-  document.querySelector("#paymentMethod").addEventListener("input", updatePaymentPreview);
-  document.querySelector("#paymentStatus").addEventListener("input", updatePaymentPreview);
 
   updateInstallAppButton();
 }
@@ -2322,7 +2029,7 @@ function bindInputs() {
   document.querySelector("#usePackage").addEventListener("change", fillAppointmentPackages);
   document.querySelector("#appointmentService").addEventListener("change", updateAppointmentPriceFromServices);
   document.querySelector("#appointmentService2").addEventListener("change", updateAppointmentPriceFromServices);
-  ["settingCompanyName", "settingSubtitle", "settingLogoText", "settingGreen", "settingGreenDark", "settingBeige", "settingInk", "taxaDebito", "taxaCredito", "descontoDinheiroPix"].forEach((idName) => {
+  ["settingCompanyName", "settingSubtitle", "settingLogoText", "settingGreen", "settingGreenDark", "settingBeige", "settingInk"].forEach((idName) => {
     document.querySelector(`#${idName}`).addEventListener("input", () => {
       state.settings.companyName = document.querySelector("#settingCompanyName").value || DEFAULT_SETTINGS.companyName;
       state.settings.subtitle = document.querySelector("#settingSubtitle").value || DEFAULT_SETTINGS.subtitle;
@@ -2331,11 +2038,6 @@ function bindInputs() {
       state.settings.colors.greenDark = document.querySelector("#settingGreenDark").value;
       state.settings.colors.beige = document.querySelector("#settingBeige").value;
       state.settings.colors.ink = document.querySelector("#settingInk").value;
-      state.settings.taxas = {
-        debito: Number(document.querySelector("#taxaDebito").value || 0),
-        credito: Number(document.querySelector("#taxaCredito").value || 0),
-        descontoDinheiroPix: Number(document.querySelector("#descontoDinheiroPix").value || 0),
-      };
       applySettings();
     });
   });
@@ -2352,7 +2054,7 @@ function exportCsv() {
 
 function exportBackup() {
   const backup = {
-    app: "Rayssa Oliveira Gestão",
+    app: "Aguiar Hub",
     version: 1,
     exportedAt: new Date().toISOString(),
     data: {
@@ -2364,7 +2066,7 @@ function exportBackup() {
       financeiro: state.financeiro,
     },
   };
-  download(`backup-rayssa-oliveira-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
+  download(`backup-Aguiarhub-oliveira-${toDateInput(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
   toast("Backup completo exportado.");
 }
 
@@ -2393,7 +2095,6 @@ function importBackup(event) {
       state.agendamentos = data.agendamentos;
       state.pacotes = Array.isArray(data.pacotes) ? data.pacotes : [];
       state.financeiro = data.financeiro;
-      migrateState();
       recomputePackageUsage();
       state.agendamentos.forEach((appointment) => {
         appointment.financeiroGerado = state.financeiro.some((entry) => entry.origem === "agendamento" && entry.agendamentoId === appointment.id);
