@@ -556,7 +556,7 @@ function brandSlug() {
   return normalize(companyName()).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "empresa";
 }
 
-function applySettings() {
+function applySettings(skipAdminFormRefresh = false) {
   const settings = state.settings;
   document.documentElement.style.setProperty("--green", settings.colors.green);
   document.documentElement.style.setProperty("--green-dark", settings.colors.greenDark);
@@ -587,7 +587,7 @@ function applySettings() {
   });
   if (document.querySelector("#loginCompanyName")) document.querySelector("#loginCompanyName").textContent = companyName();
   if (document.querySelector("#loginSubtitle")) document.querySelector("#loginSubtitle").textContent = settings.subtitle || "Acesso de Funcionários";
-  renderAdminSettings();
+  if (!skipAdminFormRefresh) renderAdminSettings();
 }
 
 function renderAdminSettings() {
@@ -2613,9 +2613,9 @@ function bindInputs() {
   document.querySelector("#appointmentService2").addEventListener("change", updateAppointmentPriceFromServices);
   ["settingCompanyName", "settingSubtitle", "settingLogoText", "settingGreen", "settingGreenDark", "settingBeige", "settingInk", "settingAlert", "taxaDebito", "taxaCredito"].forEach((idName) => {
     document.querySelector(`#${idName}`).addEventListener("input", () => {
-      state.settings.companyName = document.querySelector("#settingCompanyName").value || DEFAULT_SETTINGS.companyName;
-      state.settings.subtitle = document.querySelector("#settingSubtitle").value || DEFAULT_SETTINGS.subtitle;
-      state.settings.logoText = document.querySelector("#settingLogoText").value || state.settings.companyName.slice(0, 1).toUpperCase();
+      state.settings.companyName = document.querySelector("#settingCompanyName").value;
+      state.settings.subtitle = document.querySelector("#settingSubtitle").value;
+      state.settings.logoText = document.querySelector("#settingLogoText").value;
       state.settings.colors.green = document.querySelector("#settingGreen").value;
       state.settings.colors.greenDark = document.querySelector("#settingGreenDark").value;
       state.settings.colors.beige = document.querySelector("#settingBeige").value;
@@ -2625,7 +2625,9 @@ function bindInputs() {
         debito: Number(document.querySelector("#taxaDebito").value || 0),
         credito: Number(document.querySelector("#taxaCredito").value || 0),
       };
-      applySettings();
+      applySettings(true);
+      document.querySelector("#adminNamePreview").textContent = document.querySelector("#settingCompanyName").value || DEFAULT_SETTINGS.companyName;
+      document.querySelector("#adminSubtitlePreview").textContent = document.querySelector("#settingSubtitle").value || DEFAULT_SETTINGS.subtitle;
     });
   });
 }
