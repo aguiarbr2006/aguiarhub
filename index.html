@@ -382,14 +382,8 @@
           <label>Início<input id="appointmentStart" type="datetime-local" required /></label>
           <label>Fim<input id="appointmentEnd" type="datetime-local" required /></label>
           <label class="payment-field">Valor<input id="appointmentPrice" type="number" min="0" step="0.01" /></label>
-          <label class="payment-field">Desconto
-            <select id="discountType">
-              <option value="nenhum">Nenhum</option>
-              <option value="valor">Valor fixo</option>
-              <option value="porcentagem">Porcentagem</option>
-            </select>
-          </label>
-          <label class="payment-field">Valor desconto<input id="discountValue" type="number" min="0" step="0.01" value="0" /></label>
+          <input id="discountType" type="hidden" value="nenhum" />
+          <input id="discountValue" type="hidden" value="0" />
           <label class="payment-field">Forma de pagamento
             <select id="appointmentPaymentMethod">
               <option value="">Pendente</option>

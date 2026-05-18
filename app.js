@@ -1736,8 +1736,8 @@ function openAppointment(appointmentId = "") {
   document.querySelector("#appointmentStart").value = item?.dataHoraInicio || toDateTimeInput(now);
   document.querySelector("#appointmentEnd").value = item?.dataHoraFim || toDateTimeInput(end);
   document.querySelector("#appointmentPrice").value = item?.valorServico ?? "";
-  document.querySelector("#discountType").value = item?.descontoTipo || "nenhum";
-  document.querySelector("#discountValue").value = item?.descontoValor ?? 0;
+  document.querySelector("#discountType").value = "nenhum";
+  document.querySelector("#discountValue").value = 0;
   document.querySelector("#appointmentPaymentMethod").value = item?.formaPagamento || "";
   document.querySelector("#appointmentPaymentStatus").value = item?.statusPagamento || "pendente";
   document.querySelector("#appointmentPaymentDiscountType").value = item?.descontoPagamentoTipo || "nenhum";
@@ -2021,7 +2021,11 @@ function updatePaymentAlert() {
   const alertMessage = document.querySelector("#alertMessage");
   if (!alertDiv || !alertMessage) return;
   const alerts = state.agendamentos
-    .filter((appointment) => appointment.status === "Concluído" && appointment.statusPagamento === "pendente")
+    .filter((appointment) => {
+      const paymentPending = appointment.status === "Concluído" && appointment.statusPagamento === "pendente";
+      const appointmentLate = isAppointmentLate(appointment);
+      return paymentPending || appointmentLate;
+    })
     .sort((a, b) => a.dataHoraInicio.localeCompare(b.dataHoraInicio));
 
   if (!alerts.length) {
@@ -2032,7 +2036,9 @@ function updatePaymentAlert() {
 
   alertMessage.innerHTML = alerts
     .map((appointment) => {
-      const text = `⚠️ ${appointment.nomeCliente} - pagamento pendente`;
+      const text = isAppointmentLate(appointment)
+        ? `⏰ ${appointment.nomeCliente} - agendamento atrasado (${parseDate(appointment.dataHoraInicio).toLocaleDateString("pt-BR")} ${parseDate(appointment.dataHoraInicio).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})`
+        : `⚠️ ${appointment.nomeCliente} - pagamento pendente`;
       return `<button type="button" data-edit-appointment="${appointment.id}">${escapeHtml(text)}</button>`;
     })
     .join(`<span class="alert-separator">|</span>`);
@@ -2145,7 +2151,7 @@ function bindForms() {
     const pacoteId = document.querySelector("#appointmentPackage").value;
     const servicoCreditoPacoteId = document.querySelector("#packageCreditType").value;
     const price = usarPacote ? 0 : Number(document.querySelector("#appointmentPrice").value);
-    const finalValue = calculateFinalValue(price, document.querySelector("#discountType").value, document.querySelector("#discountValue").value);
+    const finalValue = price;
     const paymentMethod = usarPacote ? "" : document.querySelector("#appointmentPaymentMethod").value;
     const appointmentPaymentStatus = usarPacote ? "pago" : document.querySelector("#appointmentPaymentStatus").value;
     const paymentDiscountType = document.querySelector("#appointmentPaymentDiscountType").value;
@@ -2174,8 +2180,8 @@ function bindForms() {
       servicoId2: service2?.id || "",
       nomeServico2: service2?.nome || "",
       valorServico: price,
-      descontoTipo: document.querySelector("#discountType").value,
-      descontoValor: Number(document.querySelector("#discountValue").value || 0),
+      descontoTipo: "nenhum",
+      descontoValor: 0,
       valorFinal: finalValue,
       dataHoraInicio: start,
       dataHoraFim: end,
