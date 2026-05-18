@@ -479,5 +479,83 @@ a barra de alerta de aviso esta enciama das informações. exeplo: no celular es
 deixar essa caixa de alerta configuravel como a cor da barra la no admin junto com as demais configurações.
 
 
+---------------------
+
+no pagamento em dinheiro e pix quando selecionado aparecer um campo desconto caso precise dar desconto em % ou dinheiro na area de pagamento por cliente e nao de forma geral e remover o descoto de forma gelra que esta no admin.
+colocar a forma de pagamento no agendamento tb nos mesmo padroes ou logica.
+
+o alerta de pagamento esta alertando pagamento pendente de data e hr futura exeplo marquei pra amanha e pagamento esta pendente ele esta informando no alerta a falta de pagamento. certo era nao mostrar so mostrar quando o seviço for concluido pra gerar pendencia.
+no celular tem uma janela azul que esta ficando encima do icone cliente no menu, acretido que seja o informatifo de salvamento pq gando salva as configurações a msg nao some e fica encima do menu no celular. e pelo pc esta normal. 
+
+menu no celular colocar ele de forma que de pra puxar de um lado pro outro horizontalmente. em fez de colocar uma opção de mais.
+
+na parte do fincanceiro caso eu editi algum valor o mesmo nao esta alterando no agendamento. preciso que seja interligados. se alterar no financeiro altere no restante vice-verça.
+
+na tela de login esta aparecendo 2 vezes o nome da empresa deixar somente um e a logo.
+
+no financeiro quanto excluo algum serviço ou pacote ele nao exclui o agentamento. eles devem ser inteligados e quando excluir pergutar se realmente quer excluir o agendamento o pacote o que estiver interligado a exclução. e o contrario tb se excluir o serviço deve sar do financeiro.
+
+reorganizado as ideias 
+
+Pagamento em dinheiro/Pix com desconto individual:
+
+Remover a taxa de desconto geral do admin (descontoDinheiroPix) e permitir desconto personalizado no modal de pagamento.
+
+No modal de pagamento, ao selecionar dinheiro ou pix, exibir um campo para desconto (percentual ou valor fixo) que será aplicado sobre o valor bruto do agendamento.
+
+Ajustar a lógica de calculatePaymentValues para usar esse desconto informado, em vez do desconto geral.
+
+Remover o campo descontoDinheiroPix do adminForm e das configurações.
+
+Forma de pagamento no agendamento:
+
+Adicionar no formulário de agendamento (e na edição) um campo para forma de pagamento, seguindo mesma lógica do modal de pagamento (dinheiro, pix, débito, crédito). Isso permitirá registrar o pagamento diretamente ao salvar o agendamento.
+
+Integrar com o cálculo de líquido e taxas.
+
+Alerta de pagamento pendente:
+
+Atualmente, o alerta mostra pendentes mesmo para agendamentos futuros. Deve mostrar apenas quando o serviço for concluído e ainda estiver pendente, ou quando o horário já passou (atrasado) e pendente. Mas a regra solicitada: "só mostrar quando o serviço for concluído pra gerar pendência". Ou seja, apenas agendamentos com status "Concluído" e pagamento pendente devem aparecer no alerta. Não mais mostrar para "Agendado" ou "Confirmado" mesmo que a data seja passada.
+
+Modificar updatePaymentAlert para filtrar por status "Concluído" e statusPagamento "pendente".
+
+Janela azul no celular sobre o menu:
+
+Provavelmente é o toast de notificação que não está sumindo ou o alerta de pagamento. Verificar o CSS e o script de timeout do toast. O toast tem timeout de 2600ms, mas pode estar ficando fixo. Ou pode ser o #paymentAlertBar que tem fundo azul (alert color). Ajustar para que o alerta não sobreponha o menu inferior. O problema descrito: "quando salva as configurações a msg não some e fica em cima do menu no celular". Isso indica que o toast está aparecendo e não desaparecendo. Verificar se há chamadas múltiplas de toast ou se o timeout não está sendo aplicado corretamente. Garantir que ao salvar configurações, o toast seja exibido e removido após 2.6s. Também verificar z-index e posicionamento no mobile.
+
+Menu no celular horizontal rolável:
+
+Substituir o botão "Mais" e o menu suspenso por um menu inferior com rolagem horizontal (overflow-x: auto, white-space: nowrap, etc.). Atualmente o bottom-nav tem 5 itens fixos e os outros ficam em um "Mais". Deve-se exibir todos os itens em uma linha rolável horizontalmente. Isso melhora a usabilidade.
+
+Financeiro e agendamento interligados:
+
+Ao editar um lançamento financeiro que veio de um agendamento (origem "agendamento"), deve atualizar os dados do agendamento correspondente (valor líquido, forma de pagamento, data de pagamento, etc.) e vice-versa.
+
+Atualmente, ao editar um lançamento financeiro manualmente, não há sincronização de volta. Precisamos implementar essa lógica.
+
+Quando excluir um lançamento financeiro de origem "agendamento", deve marcar o pagamento do agendamento como pendente e remover a ligação.
+
+Quando excluir um agendamento, remover o lançamento financeiro associado (já faz isso parcialmente, mas verificar).
+
+Implementar sincronização bidirecional.
+
+Tela de login repetindo nome da empresa e logo:
+
+O login tem .login-header com #loginCompanyName e #loginSubtitle, além de um .login-brand que também mostra o nome. Remover a duplicidade, deixando apenas um elemento para nome e um para subtítulo. Ajustar o HTML e o JavaScript que preenche esses campos.
+
+Exclusão interligada (serviço/pacote e agendamentos/financeiro):
+
+Ao excluir um serviço (desativar, na verdade), deve-se perguntar se deseja remover os agendamentos relacionados? Atualmente apenas desativa. O pedido: "quando excluir perguntar se realmente quer excluir o agendamento o pacote o que estiver interligado". Ou seja, se excluir um serviço, deve remover os agendamentos que usam esse serviço? Ou pelo menos perguntar. O mesmo para pacotes: ao excluir um pacote, deve remover os agendamentos que usam esse pacote? Atualmente apenas limpa o pacoteId. Vamos implementar uma confirmação e remoção em cascata ou aviso.
+
+Para o financeiro, ao excluir um lançamento que veio de agendamento, deve desassociar e marcar pagamento pendente.
+
+Vamos implementar as alterações de forma incremental, garantindo que as funções existentes não sejam quebradas.
+
+Primeiro, vou reescrever as partes relevantes do código com as modificações.
+
+Como o arquivo é grande, vou fornecer um patch ou trechos modificados. O ideal é que o usuário substitua as funções indicadas.
+
+Vou listar as alterações por tópico.
+
 
 

@@ -32,8 +32,6 @@
               <small>Acesso de Funcionários</small>
             </div>
           </div>
-          <h1 id="loginCompanyName">Barbara Beauty</h1>
-          <p id="loginSubtitle">Acesso de Funcionários</p>
         </div>
         <form id="loginForm" class="login-form">
           <label id="loginIdentifierField">
@@ -246,7 +244,6 @@
               <label>Cor da barra de alerta<input id="settingAlert" type="color" /></label>
               <label>Taxa Débito (%)<input id="taxaDebito" type="number" min="0" step="0.01" /></label>
               <label>Taxa Crédito (%)<input id="taxaCredito" type="number" min="0" step="0.01" /></label>
-              <label>Desconto Dinheiro/Pix (%)<input id="descontoDinheiroPix" type="number" min="0" step="0.01" /></label>
               <label>Crédito do desenvolvedor<input id="settingDeveloperCredit" readonly /></label>
             </div>
             <div class="admin-preview">
@@ -319,26 +316,11 @@
           <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
           <span class="nav-label">Admin</span>
         </button>
-      </nav>
-      <button class="primary-button mobile-more" id="mobileMoreButton">Mais</button>
-      <div class="mobile-more-menu" id="mobileMoreMenu">
-        <button class="nav-item" data-page="pacotes">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-          <span class="nav-label">Pacotes</span>
-        </button>
-        <button class="nav-item" data-page="servicos">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
-          <span class="nav-label">Serviços</span>
-        </button>
         <button class="nav-item" data-page="funcionarios">
           <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
           <span class="nav-label">Funcionários</span>
         </button>
-        <button class="nav-item" data-page="admin">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
-          <span class="nav-label">Admin</span>
-        </button>
-      </div>
+      </nav>
     </div>
 
     <dialog id="clientModal">
@@ -408,6 +390,31 @@
             </select>
           </label>
           <label class="payment-field">Valor desconto<input id="discountValue" type="number" min="0" step="0.01" value="0" /></label>
+          <label class="payment-field">Forma de pagamento
+            <select id="appointmentPaymentMethod">
+              <option value="">Pendente</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">Pix</option>
+              <option value="debito">Cartão Débito</option>
+              <option value="credito">Cartão Crédito</option>
+            </select>
+          </label>
+          <label class="payment-field">Status do pagamento
+            <select id="appointmentPaymentStatus">
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+            </select>
+          </label>
+          <div class="form-grid payment-discount-fields hidden" id="appointmentPaymentDiscountFields">
+            <label>Desconto no pagamento
+              <select id="appointmentPaymentDiscountType">
+                <option value="nenhum">Nenhum</option>
+                <option value="valor">Valor fixo</option>
+                <option value="porcentagem">Porcentagem</option>
+              </select>
+            </label>
+            <label>Valor do desconto<input id="appointmentPaymentDiscountValue" type="number" min="0" step="0.01" value="0" /></label>
+          </div>
           <label>Status
             <select id="appointmentStatus">
               <option>Agendado</option>
@@ -418,6 +425,7 @@
           </label>
         </div>
         <div class="final-value">Valor final: <strong id="finalValuePreview">R$ 0,00</strong></div>
+        <div class="final-value" id="appointmentPaymentPreview">Pagamento pendente · líquido previsto: <strong>R$ 0,00</strong></div>
         <label>Observações<textarea id="appointmentNotes" rows="3"></textarea></label>
         <footer>
           <button type="button" class="danger-button" id="deleteAppointment">Excluir</button>
@@ -466,6 +474,16 @@
             <option value="credito">Cartão Crédito</option>
           </select>
         </label>
+        <div class="form-grid payment-discount-fields hidden" id="paymentDiscountFields">
+          <label>Desconto
+            <select id="paymentDiscountType">
+              <option value="nenhum">Nenhum</option>
+              <option value="valor">Valor fixo</option>
+              <option value="porcentagem">Porcentagem</option>
+            </select>
+          </label>
+          <label>Valor do desconto<input id="paymentDiscountValue" type="number" min="0" step="0.01" value="0" /></label>
+        </div>
         <label>Status do pagamento
           <select id="paymentStatus">
             <option value="pago">Pago</option>

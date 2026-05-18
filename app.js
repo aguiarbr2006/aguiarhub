@@ -21,7 +21,6 @@ const DEFAULT_SETTINGS = {
   taxas: {
     debito: 1.99,
     credito: 4.99,
-    descontoDinheiroPix: 5,
   },
 };
 
@@ -524,6 +523,9 @@ function migrateState() {
     appointment.formaPagamento ||= "";
     appointment.taxaPercentual = Number(appointment.taxaPercentual || 0);
     appointment.valorTaxa = Number(appointment.valorTaxa || 0);
+    appointment.descontoPagamentoTipo ||= "nenhum";
+    appointment.descontoPagamentoValor = Number(appointment.descontoPagamentoValor || 0);
+    appointment.valorDescontoPagamento = Number(appointment.valorDescontoPagamento || 0);
     appointment.valorBruto = Number(appointment.valorBruto ?? appointment.valorFinal ?? 0);
     appointment.valorLiquido = Number(appointment.valorLiquido ?? appointment.valorFinal ?? 0);
     appointment.dataPagamento ||= paidByHistory ? toDateInput(appointment.dataHoraInicio || new Date()) : "";
@@ -583,8 +585,8 @@ function applySettings() {
     brand.querySelector("strong").textContent = companyName();
     brand.querySelector("small").textContent = settings.subtitle;
   });
-  document.querySelector("#loginCompanyName").textContent = companyName();
-  document.querySelector("#loginSubtitle").textContent = settings.subtitle || "Acesso de Funcionários";
+  if (document.querySelector("#loginCompanyName")) document.querySelector("#loginCompanyName").textContent = companyName();
+  if (document.querySelector("#loginSubtitle")) document.querySelector("#loginSubtitle").textContent = settings.subtitle || "Acesso de Funcionários";
   renderAdminSettings();
 }
 
@@ -602,7 +604,6 @@ function renderAdminSettings() {
   document.querySelector("#settingAlert").value = settings.colors.alert || DEFAULT_SETTINGS.colors.alert;
   document.querySelector("#taxaDebito").value = settings.taxas.debito;
   document.querySelector("#taxaCredito").value = settings.taxas.credito;
-  document.querySelector("#descontoDinheiroPix").value = settings.taxas.descontoDinheiroPix;
   document.querySelector("#settingDeveloperCredit").value = settings.developerCredit;
   document.querySelector("#adminNamePreview").textContent = companyName();
   document.querySelector("#adminSubtitlePreview").textContent = settings.subtitle;
@@ -644,9 +645,10 @@ function inMonth(dateValue, monthValue) {
 
 function toast(message) {
   const el = document.querySelector("#toast");
+  clearTimeout(el.hideTimer);
   el.textContent = message;
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 2600);
+  el.hideTimer = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
 function setPage(pageName) {
@@ -679,16 +681,23 @@ function calculateFinalValue(price, type, discountValue) {
   return base;
 }
 
-function calculatePaymentValues(value, method) {
+function calculatePaymentDiscount(grossValue, type, value) {
+  const discount = Number(value || 0);
+  if (type === "porcentagem") return Math.min(grossValue, grossValue * (discount / 100));
+  if (type === "valor") return Math.min(grossValue, discount);
+  return 0;
+}
+
+function calculatePaymentValues(value, method, discountType = "nenhum", discountValue = 0) {
   const grossValue = Number(value || 0);
   const taxas = state.settings.taxas || DEFAULT_SETTINGS.taxas;
   let rate = 0;
   if (method === "debito") rate = Number(taxas.debito || 0);
   if (method === "credito") rate = Number(taxas.credito || 0);
-  if (method === "dinheiro" || method === "pix") rate = Number(taxas.descontoDinheiroPix || 0);
-  const taxAmount = grossValue * (rate / 100);
-  const netValue = Math.max(0, grossValue - taxAmount);
-  return { rate, taxAmount, grossValue, netValue };
+  const discountAmount = method === "dinheiro" || method === "pix" ? calculatePaymentDiscount(grossValue, discountType, discountValue) : 0;
+  const taxAmount = method === "debito" || method === "credito" ? grossValue * (rate / 100) : 0;
+  const netValue = Math.max(0, grossValue - discountAmount - taxAmount);
+  return { rate, taxAmount, discountAmount, grossValue, netValue };
 }
 
 function getSelectedService() {
@@ -862,12 +871,22 @@ function deletePackage(packageId, closeModal = false) {
   const pacote = state.pacotes.find((item) => item.id === packageId);
   if (!pacote) return;
   if (!confirm("Deseja realmente excluir este pacote?")) return;
+  const linkedAppointments = state.agendamentos.filter((appointment) => appointment.pacoteId === packageId);
+  const removeLinked = linkedAppointments.length
+    ? confirm(`Este pacote tem ${linkedAppointments.length} agendamento(s) vinculado(s). Deseja excluir esses agendamentos também? Clique em Cancelar para manter os agendamentos e remover apenas o vínculo com o pacote.`)
+    : false;
   state.pacotes = state.pacotes.filter((item) => item.id !== packageId);
-  state.agendamentos
-    .filter((appointment) => appointment.pacoteId === packageId)
-    .forEach((appointment) => {
+  if (removeLinked) {
+    linkedAppointments.forEach((appointment) => deleteAppointmentById(appointment.id));
+  } else {
+    linkedAppointments.forEach((appointment) => {
       appointment.pacoteId = "";
+      appointment.usarPacote = false;
+      appointment.statusPagamento = "pendente";
+      appointment.financeiroGerado = false;
     });
+  }
+  state.financeiro = state.financeiro.filter((entry) => !(entry.origem === "pacote" && entry.pacoteId === packageId));
   recomputePackageUsage();
   save();
   if (closeModal) document.querySelector("#packageModal").close();
@@ -955,6 +974,41 @@ function syncAppointmentFinance(appointment) {
   });
   appointment.financeiroGerado = true;
   return "created";
+}
+
+function resetAppointmentPayment(appointment) {
+  appointment.statusPagamento = appointment.usarPacote ? "pago" : "pendente";
+  appointment.formaPagamento = "";
+  appointment.taxaPercentual = 0;
+  appointment.valorTaxa = 0;
+  appointment.descontoPagamentoTipo = "nenhum";
+  appointment.descontoPagamentoValor = 0;
+  appointment.valorDescontoPagamento = 0;
+  appointment.valorBruto = Number(appointment.valorFinal || 0);
+  appointment.valorLiquido = appointment.usarPacote ? 0 : Number(appointment.valorFinal || 0);
+  appointment.dataPagamento = appointment.usarPacote ? toDateInput(appointment.dataHoraInicio || new Date()) : "";
+  appointment.financeiroGerado = false;
+}
+
+function deleteAppointmentById(appointmentId) {
+  state.agendamentos = state.agendamentos.filter((appointment) => appointment.id !== appointmentId);
+  state.financeiro = state.financeiro.filter((entry) => entry.agendamentoId !== appointmentId);
+}
+
+function syncAppointmentFromFinance(entry) {
+  if (entry.origem !== "agendamento" || !entry.agendamentoId) return;
+  const appointment = state.agendamentos.find((item) => item.id === entry.agendamentoId);
+  if (!appointment) return;
+  if (entry.tipo !== "entrada") {
+    resetAppointmentPayment(appointment);
+    return;
+  }
+  appointment.statusPagamento = "pago";
+  appointment.valorLiquido = Number(entry.valor || 0);
+  appointment.valorBruto = Number(appointment.valorFinal || appointment.valorBruto || entry.valor || 0);
+  appointment.valorTaxa = Math.max(0, Number(appointment.valorBruto || 0) - Number(entry.valor || 0));
+  appointment.dataPagamento = entry.data || toDateInput(new Date());
+  appointment.financeiroGerado = true;
 }
 
 function bindNavigation() {
@@ -1609,16 +1663,22 @@ function updatePackageModeFields() {
   document.querySelectorAll(".package-field").forEach((field) => {
     field.style.display = usePackage ? "grid" : "none";
   });
-  document.querySelectorAll(".service-field, .payment-field").forEach((field) => {
+  document.querySelectorAll(".service-field, .payment-field, .payment-discount-fields").forEach((field) => {
     field.style.display = usePackage ? "none" : "grid";
   });
   document.querySelector("#appointmentPrice").disabled = usePackage;
   document.querySelector("#discountType").disabled = usePackage;
   document.querySelector("#discountValue").disabled = usePackage;
+  document.querySelector("#appointmentPaymentMethod").disabled = usePackage;
+  document.querySelector("#appointmentPaymentStatus").disabled = usePackage;
   if (usePackage) {
     document.querySelector("#appointmentPrice").value = 0;
     document.querySelector("#discountType").value = "nenhum";
     document.querySelector("#discountValue").value = 0;
+    document.querySelector("#appointmentPaymentMethod").value = "";
+    document.querySelector("#appointmentPaymentStatus").value = "pago";
+    document.querySelector("#appointmentPaymentDiscountType").value = "nenhum";
+    document.querySelector("#appointmentPaymentDiscountValue").value = 0;
   }
   updateFinalPreview();
 }
@@ -1678,6 +1738,10 @@ function openAppointment(appointmentId = "") {
   document.querySelector("#appointmentPrice").value = item?.valorServico ?? "";
   document.querySelector("#discountType").value = item?.descontoTipo || "nenhum";
   document.querySelector("#discountValue").value = item?.descontoValor ?? 0;
+  document.querySelector("#appointmentPaymentMethod").value = item?.formaPagamento || "";
+  document.querySelector("#appointmentPaymentStatus").value = item?.statusPagamento || "pendente";
+  document.querySelector("#appointmentPaymentDiscountType").value = item?.descontoPagamentoTipo || "nenhum";
+  document.querySelector("#appointmentPaymentDiscountValue").value = item?.descontoPagamentoValor ?? 0;
   document.querySelector("#appointmentStatus").value = item?.status || "Agendado";
   document.querySelector("#appointmentNotes").value = item?.observacoes || "";
   document.querySelector("#deleteAppointment").style.visibility = item ? "visible" : "hidden";
@@ -1704,6 +1768,8 @@ function openPaymentModal(appointmentId, afterSave = null) {
   document.querySelector("#paymentAppointmentId").value = appointment.id;
   document.querySelector("#paymentMethod").value = appointment.formaPagamento || "";
   document.querySelector("#paymentStatus").value = appointment.statusPagamento || "pendente";
+  document.querySelector("#paymentDiscountType").value = appointment.descontoPagamentoTipo || "nenhum";
+  document.querySelector("#paymentDiscountValue").value = appointment.descontoPagamentoValor ?? 0;
   document.querySelector("#paymentDate").value = appointment.dataPagamento || toDateInput(new Date());
   document.querySelector("#paymentNotes").value = appointment.observacoesPagamento || "";
   document.querySelector("#paymentSummary").innerHTML = `
@@ -1715,15 +1781,60 @@ function openPaymentModal(appointmentId, afterSave = null) {
   document.querySelector("#paymentModal").showModal();
 }
 
+function updatePaymentDiscountVisibility(prefix = "payment") {
+  const method = document.querySelector(`#${prefix}Method`)?.value || "";
+  const field = document.querySelector(`#${prefix}DiscountFields`);
+  if (!field) return;
+  field.classList.toggle("hidden", method !== "dinheiro" && method !== "pix");
+}
+
 function updatePaymentPreview() {
   const appointmentId = document.querySelector("#paymentAppointmentId")?.value;
   const appointment = state.agendamentos.find((item) => item.id === appointmentId);
   const method = document.querySelector("#paymentMethod")?.value || "";
+  const discountType = document.querySelector("#paymentDiscountType")?.value || "nenhum";
+  const discountValue = document.querySelector("#paymentDiscountValue")?.value || 0;
   const preview = document.querySelector("#paymentPreview");
   if (!appointment || !preview) return;
-  const { rate, taxAmount, netValue } = calculatePaymentValues(appointment.valorFinal, method);
-  const rateLabel = method === "dinheiro" || method === "pix" ? "desconto" : "taxa";
-  preview.innerHTML = `${rateLabel}: <strong>${rate.toFixed(2)}%</strong> · abatimento: <strong>${money(taxAmount)}</strong> · líquido: <strong>${money(netValue)}</strong>`;
+  updatePaymentDiscountVisibility("payment");
+  const { rate, taxAmount, discountAmount, netValue } = calculatePaymentValues(appointment.valorFinal, method, discountType, discountValue);
+  if (!method) {
+    preview.innerHTML = `Líquido previsto: <strong>${money(netValue)}</strong>`;
+    return;
+  }
+  const detail = method === "dinheiro" || method === "pix"
+    ? `desconto: <strong>${money(discountAmount)}</strong>`
+    : `taxa: <strong>${rate.toFixed(2)}%</strong> · taxa banco: <strong>${money(taxAmount)}</strong>`;
+  preview.innerHTML = `${detail} · líquido: <strong>${money(netValue)}</strong>`;
+}
+
+function updateAppointmentPaymentPreview() {
+  const method = document.querySelector("#appointmentPaymentMethod")?.value || "";
+  const statusSelect = document.querySelector("#appointmentPaymentStatus");
+  if (statusSelect && method && statusSelect.value === "pendente") statusSelect.value = "pago";
+  if (statusSelect && !method) statusSelect.value = "pendente";
+  const preview = document.querySelector("#appointmentPaymentPreview");
+  if (!preview) return;
+  updatePaymentDiscountVisibility("appointmentPayment");
+  const grossValue = calculateFinalValue(
+    document.querySelector("#appointmentPrice").value,
+    document.querySelector("#discountType").value,
+    document.querySelector("#discountValue").value,
+  );
+  const { rate, taxAmount, discountAmount, netValue } = calculatePaymentValues(
+    grossValue,
+    method,
+    document.querySelector("#appointmentPaymentDiscountType")?.value || "nenhum",
+    document.querySelector("#appointmentPaymentDiscountValue")?.value || 0,
+  );
+  if (!method) {
+    preview.innerHTML = `Pagamento pendente · líquido previsto: <strong>${money(grossValue)}</strong>`;
+    return;
+  }
+  const detail = method === "dinheiro" || method === "pix"
+    ? `desconto no pagamento: <strong>${money(discountAmount)}</strong>`
+    : `taxa: <strong>${rate.toFixed(2)}%</strong> · taxa banco: <strong>${money(taxAmount)}</strong>`;
+  preview.innerHTML = `${detail} · líquido: <strong>${money(netValue)}</strong>`;
 }
 
 function savePaymentAndClose() {
@@ -1732,6 +1843,8 @@ function savePaymentAndClose() {
   if (!appointment) return;
   const method = document.querySelector("#paymentMethod").value;
   const statusPagamento = document.querySelector("#paymentStatus").value;
+  const descontoPagamentoTipo = document.querySelector("#paymentDiscountType").value;
+  const descontoPagamentoValor = Number(document.querySelector("#paymentDiscountValue").value || 0);
   const dataPagamento = document.querySelector("#paymentDate").value || toDateInput(new Date());
   const observacoesPagamento = document.querySelector("#paymentNotes").value.trim();
 
@@ -1740,19 +1853,18 @@ function savePaymentAndClose() {
     return;
   }
 
-  const { rate, taxAmount, grossValue, netValue } = calculatePaymentValues(appointment.valorFinal, method);
+  const { rate, taxAmount, discountAmount, grossValue, netValue } = calculatePaymentValues(appointment.valorFinal, method, descontoPagamentoTipo, descontoPagamentoValor);
   appointment.formaPagamento = statusPagamento === "pago" ? method : "";
   appointment.statusPagamento = statusPagamento;
   appointment.taxaPercentual = rate;
   appointment.valorTaxa = taxAmount;
+  appointment.descontoPagamentoTipo = method === "dinheiro" || method === "pix" ? descontoPagamentoTipo : "nenhum";
+  appointment.descontoPagamentoValor = method === "dinheiro" || method === "pix" ? descontoPagamentoValor : 0;
+  appointment.valorDescontoPagamento = discountAmount;
   appointment.valorBruto = grossValue;
   appointment.valorLiquido = netValue;
   appointment.dataPagamento = dataPagamento;
   appointment.observacoesPagamento = observacoesPagamento;
-  if (statusPagamento === "pago" && appointment.status !== "Concluído") {
-    appointment.status = "Concluído";
-  }
-
   const financeAction = syncAppointmentFinance(appointment);
   const callback = afterPaymentSaveCallback;
   afterPaymentSaveCallback = null;
@@ -1847,6 +1959,7 @@ function updateFinalPreview() {
     document.querySelector("#discountValue").value,
   );
   document.querySelector("#finalValuePreview").textContent = money(value);
+  updateAppointmentPaymentPreview();
 }
 
 function sum(items) {
@@ -1908,8 +2021,7 @@ function updatePaymentAlert() {
   const alertMessage = document.querySelector("#alertMessage");
   if (!alertDiv || !alertMessage) return;
   const alerts = state.agendamentos
-    .filter((appointment) => appointment.status !== "Cancelado")
-    .filter((appointment) => appointment.statusPagamento === "pendente" || isAppointmentLate(appointment))
+    .filter((appointment) => appointment.status === "Concluído" && appointment.statusPagamento === "pendente")
     .sort((a, b) => a.dataHoraInicio.localeCompare(b.dataHoraInicio));
 
   if (!alerts.length) {
@@ -1920,10 +2032,7 @@ function updatePaymentAlert() {
 
   alertMessage.innerHTML = alerts
     .map((appointment) => {
-      const late = isAppointmentLate(appointment);
-      const text = late
-        ? `⏰ ${appointment.nomeCliente} - atrasou (${parseDate(appointment.dataHoraInicio).toLocaleDateString("pt-BR")})`
-        : `⚠️ ${appointment.nomeCliente} - pagamento pendente`;
+      const text = `⚠️ ${appointment.nomeCliente} - pagamento pendente`;
       return `<button type="button" data-edit-appointment="${appointment.id}">${escapeHtml(text)}</button>`;
     })
     .join(`<span class="alert-separator">|</span>`);
@@ -2037,11 +2146,16 @@ function bindForms() {
     const servicoCreditoPacoteId = document.querySelector("#packageCreditType").value;
     const price = usarPacote ? 0 : Number(document.querySelector("#appointmentPrice").value);
     const finalValue = calculateFinalValue(price, document.querySelector("#discountType").value, document.querySelector("#discountValue").value);
+    const paymentMethod = usarPacote ? "" : document.querySelector("#appointmentPaymentMethod").value;
+    const appointmentPaymentStatus = usarPacote ? "pago" : document.querySelector("#appointmentPaymentStatus").value;
+    const paymentDiscountType = document.querySelector("#appointmentPaymentDiscountType").value;
+    const paymentDiscountValue = Number(document.querySelector("#appointmentPaymentDiscountValue").value || 0);
     const start = document.querySelector("#appointmentStart").value;
     const end = document.querySelector("#appointmentEnd").value;
     if (!client) return toast("Selecione a cliente.");
     if (!usarPacote && !service) return toast("Selecione o serviço.");
     if (!usarPacote && (!price || price <= 0)) return toast("Agendamento precisa ter valor.");
+    if (!usarPacote && appointmentPaymentStatus === "pago" && !paymentMethod) return toast("Selecione a forma de pagamento.");
     if (parseDate(end) <= parseDate(start)) return toast("O fim precisa ser depois do início.");
     if (usarPacote && !pacoteId) return toast("Selecione o pacote da cliente.");
     if (usarPacote && !servicoCreditoPacoteId) return toast("Selecione o serviço do pacote.");
@@ -2071,13 +2185,16 @@ function bindForms() {
       pacoteId: usarPacote ? pacoteId : "",
       servicoCreditoPacoteId: usarPacote ? servicoCreditoPacoteId : "",
       tipoCreditoPacote: usarPacote ? servicoCreditoPacoteId : "",
-      formaPagamento: usarPacote ? "" : existing?.formaPagamento || "",
-      statusPagamento: usarPacote ? "pago" : existing?.statusPagamento || "pendente",
+      formaPagamento: appointmentPaymentStatus === "pago" ? paymentMethod : "",
+      statusPagamento: appointmentPaymentStatus,
       taxaPercentual: existing?.taxaPercentual || 0,
       valorTaxa: existing?.valorTaxa || 0,
+      descontoPagamentoTipo: paymentMethod === "dinheiro" || paymentMethod === "pix" ? paymentDiscountType : "nenhum",
+      descontoPagamentoValor: paymentMethod === "dinheiro" || paymentMethod === "pix" ? paymentDiscountValue : 0,
+      valorDescontoPagamento: existing?.valorDescontoPagamento || 0,
       valorBruto: finalValue,
       valorLiquido: usarPacote ? 0 : existing?.valorLiquido ?? finalValue,
-      dataPagamento: usarPacote ? toDateInput(start) : existing?.dataPagamento || "",
+      dataPagamento: usarPacote ? toDateInput(start) : appointmentPaymentStatus === "pago" ? existing?.dataPagamento || toDateInput(new Date()) : "",
       observacoesPagamento: existing?.observacoesPagamento || "",
       financeiroGerado: existing?.financeiroGerado || false,
       dataCadastro: existing?.dataCadastro || new Date().toISOString(),
@@ -2096,11 +2213,19 @@ function bindForms() {
       state.agendamentos.push(payload);
     }
     if (savedAppointment.statusPagamento === "pago" && !savedAppointment.usarPacote) {
-      const paymentValues = calculatePaymentValues(savedAppointment.valorFinal, savedAppointment.formaPagamento);
+      const paymentValues = calculatePaymentValues(
+        savedAppointment.valorFinal,
+        savedAppointment.formaPagamento,
+        savedAppointment.descontoPagamentoTipo,
+        savedAppointment.descontoPagamentoValor,
+      );
       savedAppointment.taxaPercentual = paymentValues.rate;
       savedAppointment.valorTaxa = paymentValues.taxAmount;
+      savedAppointment.valorDescontoPagamento = paymentValues.discountAmount;
       savedAppointment.valorBruto = paymentValues.grossValue;
       savedAppointment.valorLiquido = paymentValues.netValue;
+    } else if (!savedAppointment.usarPacote) {
+      resetAppointmentPayment(savedAppointment);
     }
     syncAppointmentFinance(savedAppointment);
     recomputePackageUsage();
@@ -2113,6 +2238,8 @@ function bindForms() {
   document.querySelector("#financeForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const financeId = document.querySelector("#financeId").value;
+    const existingFinance = state.financeiro.find((f) => f.id === financeId);
+    if (financeId && !existingFinance) return toast("Lançamento financeiro não encontrado.");
     const payload = {
       id: financeId || id(),
       tipo: document.querySelector("#financeEntryType").value,
@@ -2120,12 +2247,14 @@ function bindForms() {
       categoria: document.querySelector("#financeCategory").value.trim(),
       valor: Number(document.querySelector("#financeValue").value),
       data: document.querySelector("#financeDate").value,
-      origem: "manual",
-      agendamentoId: "",
-      dataCadastro: new Date().toISOString(),
+      origem: existingFinance?.origem || "manual",
+      agendamentoId: existingFinance?.agendamentoId || "",
+      pacoteId: existingFinance?.pacoteId || "",
+      dataCadastro: existingFinance?.dataCadastro || new Date().toISOString(),
     };
-    if (financeId) Object.assign(state.financeiro.find((f) => f.id === financeId), payload);
+    if (financeId) Object.assign(existingFinance, payload);
     else state.financeiro.push(payload);
+    syncAppointmentFromFinance(payload);
     save();
     document.querySelector("#financeModal").close();
     renderAll();
@@ -2150,7 +2279,6 @@ function bindForms() {
     state.settings.taxas = {
       debito: Number(document.querySelector("#taxaDebito").value || 0),
       credito: Number(document.querySelector("#taxaCredito").value || 0),
-      descontoDinheiroPix: Number(document.querySelector("#descontoDinheiroPix").value || 0),
     };
     save();
     renderAll();
@@ -2266,7 +2394,7 @@ function bindButtons() {
   document.querySelector("#openFinanceModal").addEventListener("click", () => openFinance());
   document.querySelector("#openPackageModal").addEventListener("click", () => openPackage());
   document.querySelector("#currentMonth").addEventListener("click", renderMonthCalendar);
-  document.querySelector("#mobileMoreButton").addEventListener("click", () => {
+  document.querySelector("#mobileMoreButton")?.addEventListener("click", () => {
     document.querySelector("#mobileMoreMenu").classList.toggle("open");
   });
   document.querySelector("#resetSettings").addEventListener("click", () => {
@@ -2298,8 +2426,9 @@ function bindButtons() {
 
   document.querySelector("#deleteAppointment").addEventListener("click", () => {
     const appointmentId = document.querySelector("#appointmentId").value;
-    state.agendamentos = state.agendamentos.filter((a) => a.id !== appointmentId);
-    state.financeiro = state.financeiro.filter((f) => f.agendamentoId !== appointmentId);
+    if (!appointmentId) return;
+    if (!confirm("Excluir este agendamento? Lançamentos financeiros vinculados também serão removidos.")) return;
+    deleteAppointmentById(appointmentId);
     recomputePackageUsage();
     save();
     document.querySelector("#appointmentModal").close();
@@ -2328,6 +2457,10 @@ function bindButtons() {
     const serviceId = document.querySelector("#serviceId").value;
     if (!serviceId) return;
     if (!confirm("Excluir serviço? Agendamentos antigos serão mantidos com o nome do serviço.")) return;
+    const linkedAppointments = state.agendamentos.filter((appointment) => appointment.servicoId === serviceId || appointment.servicoId2 === serviceId);
+    if (linkedAppointments.length && confirm(`Este serviço tem ${linkedAppointments.length} agendamento(s) vinculado(s). Deseja excluir esses agendamentos também? Clique em Cancelar para manter os agendamentos.`)) {
+      linkedAppointments.forEach((appointment) => deleteAppointmentById(appointment.id));
+    }
     const service = state.servicos.find((item) => item.id === serviceId);
     if (service) service.ativo = false;
     save();
@@ -2343,6 +2476,29 @@ function bindButtons() {
 
   document.querySelector("#deleteFinance").addEventListener("click", () => {
     const financeId = document.querySelector("#financeId").value;
+    const entry = state.financeiro.find((item) => item.id === financeId);
+    if (!entry) return;
+    if (entry.origem === "agendamento" && entry.agendamentoId) {
+      if (!confirm("Este lançamento está ligado a um agendamento. Excluir o lançamento vai marcar o pagamento do agendamento como pendente. Deseja continuar?")) return;
+      const appointment = state.agendamentos.find((item) => item.id === entry.agendamentoId);
+      if (appointment) resetAppointmentPayment(appointment);
+    }
+    if (entry.origem === "pacote" && entry.pacoteId) {
+      if (!confirm("Este lançamento está ligado a um pacote. Deseja excluir o pacote junto com o financeiro?")) return;
+      const linkedAppointments = state.agendamentos.filter((appointment) => appointment.pacoteId === entry.pacoteId);
+      const removeLinked = linkedAppointments.length
+        ? confirm(`Este pacote tem ${linkedAppointments.length} agendamento(s) vinculado(s). Deseja excluir esses agendamentos também? Clique em Cancelar para manter os agendamentos e remover apenas o vínculo.`)
+        : false;
+      state.pacotes = state.pacotes.filter((pacote) => pacote.id !== entry.pacoteId);
+      if (removeLinked) linkedAppointments.forEach((appointment) => deleteAppointmentById(appointment.id));
+      else {
+        linkedAppointments.forEach((appointment) => {
+          appointment.pacoteId = "";
+          appointment.usarPacote = false;
+          resetAppointmentPayment(appointment);
+        });
+      }
+    }
     state.financeiro = state.financeiro.filter((f) => f.id !== financeId);
     save();
     document.querySelector("#financeModal").close();
@@ -2357,6 +2513,8 @@ function bindButtons() {
   document.querySelector("#exportPdf").addEventListener("click", exportPdf);
   document.querySelector("#paymentMethod").addEventListener("input", updatePaymentPreview);
   document.querySelector("#paymentStatus").addEventListener("input", updatePaymentPreview);
+  document.querySelector("#paymentDiscountType").addEventListener("input", updatePaymentPreview);
+  document.querySelector("#paymentDiscountValue").addEventListener("input", updatePaymentPreview);
 
   updateInstallAppButton();
 }
@@ -2437,7 +2595,7 @@ function bindInputs() {
     document.querySelector(`#${idName}`).addEventListener("input", renderAll);
   });
 
-  ["appointmentPrice", "discountType", "discountValue"].forEach((idName) => {
+  ["appointmentPrice", "discountType", "discountValue", "appointmentPaymentMethod", "appointmentPaymentDiscountType", "appointmentPaymentDiscountValue", "appointmentPaymentStatus"].forEach((idName) => {
     document.querySelector(`#${idName}`).addEventListener("input", updateFinalPreview);
   });
 
@@ -2447,7 +2605,7 @@ function bindInputs() {
   document.querySelector("#appointmentPackage").addEventListener("change", () => fillPackageCreditOptions());
   document.querySelector("#appointmentService").addEventListener("change", updateAppointmentPriceFromServices);
   document.querySelector("#appointmentService2").addEventListener("change", updateAppointmentPriceFromServices);
-  ["settingCompanyName", "settingSubtitle", "settingLogoText", "settingGreen", "settingGreenDark", "settingBeige", "settingInk", "settingAlert", "taxaDebito", "taxaCredito", "descontoDinheiroPix"].forEach((idName) => {
+  ["settingCompanyName", "settingSubtitle", "settingLogoText", "settingGreen", "settingGreenDark", "settingBeige", "settingInk", "settingAlert", "taxaDebito", "taxaCredito"].forEach((idName) => {
     document.querySelector(`#${idName}`).addEventListener("input", () => {
       state.settings.companyName = document.querySelector("#settingCompanyName").value || DEFAULT_SETTINGS.companyName;
       state.settings.subtitle = document.querySelector("#settingSubtitle").value || DEFAULT_SETTINGS.subtitle;
@@ -2460,7 +2618,6 @@ function bindInputs() {
       state.settings.taxas = {
         debito: Number(document.querySelector("#taxaDebito").value || 0),
         credito: Number(document.querySelector("#taxaCredito").value || 0),
-        descontoDinheiroPix: Number(document.querySelector("#descontoDinheiroPix").value || 0),
       };
       applySettings();
     });
