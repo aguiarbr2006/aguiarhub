@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#6b8f71" />
+    <title>Agendamento | Rayssa Oliveira Nail Design</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="cliente.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+  </head>
+  <body>
+    <header class="client-header">
+      <a class="brand" href="index.html" aria-label="Voltar para pagina principal">
+        <span class="brand-mark">R</span>
+        <span>
+          <strong>Rayssa Oliveira</strong>
+          <small>Area da cliente</small>
+        </span>
+      </a>
+      <nav>
+        <a href="index.html">Pagina principal</a>
+        <a href="sistema.html">Sistema</a>
+      </nav>
+    </header>
+
+    <main class="client-shell">
+      <section class="intro-panel">
+        <p class="eyebrow">Agendamento online</p>
+        <h1>Escolha seu procedimento e solicite um horario</h1>
+        <p>
+          Entre com seu login para solicitar um horario e acompanhar o status: aguardando confirmacao, confirmado,
+          concluido ou cancelado.
+        </p>
+      </section>
+
+      <section class="auth-panel" id="authPanel">
+        <div class="panel-heading">
+          <p class="eyebrow">Entrar ou cadastrar</p>
+          <h2>Acesse sua conta</h2>
+        </div>
+        <button class="google-button" id="googleLogin" type="button">
+          <span>G</span>
+          Entrar com Google
+        </button>
+        <div class="divider"><span>ou</span></div>
+        <form id="emailAuthForm" class="stack-form">
+          <label>
+            Nome
+            <input id="authName" autocomplete="name" />
+          </label>
+          <label>
+            Email
+            <input id="authEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Senha
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required />
+          </label>
+          <div class="auth-actions">
+            <button class="primary-action" type="submit" data-auth-mode="login">Entrar</button>
+            <button class="secondary-action" type="submit" data-auth-mode="signup">Cadastrar</button>
+          </div>
+        </form>
+        <div class="message error" id="authMessage"></div>
+      </section>
+
+      <section class="booking-panel hidden" id="bookingPanel">
+        <div class="panel-heading">
+          <p class="eyebrow">Minha conta</p>
+          <h2>Dados para contato</h2>
+        </div>
+        <form id="profileForm" class="profile-grid">
+          <label>
+            Nome completo
+            <input id="clientName" autocomplete="name" required />
+          </label>
+          <label>
+            Telefone com WhatsApp
+            <input id="clientPhone" inputmode="tel" autocomplete="tel" required />
+          </label>
+          <label>
+            Email
+            <input id="clientEmail" type="email" readonly />
+          </label>
+          <button class="secondary-action" type="submit">Salvar dados</button>
+        </form>
+
+        <details class="password-panel">
+          <summary>Trocar senha</summary>
+          <form id="passwordForm" class="stack-form">
+            <label>
+              Senha atual
+              <input id="currentPassword" type="password" autocomplete="current-password" />
+            </label>
+            <label>
+              Nova senha
+              <input id="newPassword" type="password" autocomplete="new-password" minlength="6" />
+            </label>
+            <button class="secondary-action" type="submit">Atualizar senha</button>
+          </form>
+        </details>
+
+        <div class="panel-heading booking-heading">
+          <p class="eyebrow">Solicitar horario</p>
+          <h2>Novo agendamento</h2>
+        </div>
+        <form id="bookingForm" class="stack-form">
+          <label>
+            Servico
+            <select id="bookingService" required></select>
+          </label>
+          <div class="form-grid">
+            <label>
+              Data
+              <input id="bookingDate" type="date" required />
+            </label>
+            <label>
+              Horario
+              <input id="bookingTime" type="time" required />
+            </label>
+          </div>
+          <div class="service-summary" id="serviceSummary"></div>
+          <div class="available-slots" id="availableSlots"></div>
+          <label>
+            Observacoes
+            <textarea id="bookingNotes" rows="3" placeholder="Ex.: preferencia de cor, formato ou detalhe importante"></textarea>
+          </label>
+          <button class="primary-action" type="submit">Solicitar agendamento</button>
+        </form>
+
+        <div class="panel-heading booking-heading">
+          <p class="eyebrow">Meus horarios</p>
+          <h2>Acompanhe o status dos seus agendamentos</h2>
+        </div>
+        <div class="booking-list" id="clientAppointments"></div>
+
+        <button class="text-button" id="logoutButton" type="button">Sair da conta</button>
+        <div class="message" id="bookingMessage"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="cliente.js"></script>
+  </body>
+</html>

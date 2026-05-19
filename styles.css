@@ -459,6 +459,11 @@ textarea:focus-visible {
   color: #596225;
 }
 
+.badge.pendente-confirmacao {
+  background: #dce9f6;
+  color: #24527a;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

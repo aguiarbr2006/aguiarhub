@@ -558,4 +558,12 @@ Como o arquivo é grande, vou fornecer um patch ou trechos modificados. O ideal 
 Vou listar as alterações por tópico.
 
 
+VALOR DE DESCONTO ESTA DUPLICADO NO AGENDAMENTO.
+A CAIXA DE INFORMAÇÃO toast AINDA NAO ESTA SUMINDO COMPLETAMENTE. ele desce mas nao o suficiente pra sumir e fica uma peguema parte dele encima no menu no celular.
 
+///
+
+19/05/2026
+no agendamento remover o horario e deixar somente os horarios disponiveis.
+o login/cadastro do cliente pelo celular no campo do google nao esta fazendo o cadastro nem o login.
+ Deixar o site completamente editavel pelo administrador, fotos, textos, titulo, tudo editavel, acrecentar mais fotos mais coisas.

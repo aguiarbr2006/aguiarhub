@@ -3,607 +3,191 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#4f7d5a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Barbara Beauty" />
-    <title>Barbara Beauty Gestão</title>
+    <meta
+      name="description"
+      content="Portfolio de nail design com servicos, procedimentos, dicas e cuidados para unhas elegantes e saudaveis."
+    />
+    <meta name="theme-color" content="#6b8f71" />
+    <title>Rayssa Oliveira Nail Design</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <link rel="stylesheet" href="landing.css" />
   </head>
   <body>
-    <div id="loginOverlay" class="login-overlay">
-      <div class="login-modal">
-        <div class="login-header">
-          <div class="login-brand brand">
-            <span class="brand-mark">A</span>
-            <div>
-              <strong>Barbara Beauty</strong>
-              <small>Acesso de Funcionários</small>
-            </div>
-          </div>
-        </div>
-        <form id="loginForm" class="login-form">
-          <label id="loginIdentifierField">
-            Usuário ou email
-            <input type="text" id="loginIdentifier" required />
-          </label>
-          <label>
-            Senha
-            <input type="password" id="loginPassword" required />
-          </label>
-          <button type="submit" class="primary-button" id="loginSubmitButton">Entrar</button>
-          <div id="loginError" class="login-error"></div>
-        </form>
-        <div class="login-footer">
-          <p><small>Sistema seguro com autenticação de funcionários</small></p>
-        </div>
-      </div>
-    </div>
-    <div class="app-shell" id="appShell" style="display: none;">
-      <aside class="sidebar">
-        <div class="brand">
-          <span class="brand-mark">A</span>
-          <div>
-            <strong>Barbara Beauty</strong>
-            <small>Administrador</small>
-          </div>
-        </div>
-        <nav class="nav" aria-label="Navegação principal">
-          <button class="nav-item active" data-page="dashboard">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
-            <span class="nav-label">Dashboard</span>
-          </button>
-          <button class="nav-item" data-page="agenda">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-            <span class="nav-label">Agenda</span>
-          </button>
-          <button class="nav-item" data-page="clientes">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="nav-label">Clientes</span>
-          </button>
-          <button class="nav-item" data-page="financeiro">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
-            <span class="nav-label">Financeiro</span>
-          </button>
-          <button class="nav-item" data-page="pacotes">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-            <span class="nav-label">Pacotes</span>
-          </button>
-          <button class="nav-item" data-page="servicos">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
-            <span class="nav-label">Serviços</span>
-          </button>
-          <button class="nav-item" data-page="admin">
-            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
-            <span class="nav-label">Admin</span>
-          </button>
-        </nav>
-        <div class="developer-credit" id="developerCredit">Desenvolvido por Rafael Aguiar Ribeiro · @aguiar.3d</div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <h1 id="pageTitle">Dashboard</h1>
-            <p id="pageSubtitle">Resumo do seu dia e do financeiro.</p>
-          </div>
-          <div class="top-actions">
-            <button class="ghost-button" id="logoutBtn">Sair</button>
-            <button class="primary-button" id="quickAppointment">Novo agendamento</button>
-          </div>
-        </header>
-
-        <section class="page active" id="dashboardPage">
-          <div class="stats-grid">
-            <article class="stat-card">
-              <span>Receita do dia</span>
-              <strong id="todayRevenue">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Receita do mês</span>
-              <strong id="monthRevenue">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Despesas do mês</span>
-              <strong id="monthExpenses">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Lucro do mês</span>
-              <strong id="monthProfit">R$ 0,00</strong>
-            </article>
-          </div>
-
-          <div class="content-grid">
-            <section class="panel">
-              <div class="panel-title">
-                <h2>Faturamento</h2>
-                <select id="dashboardPeriod">
-                  <option value="currentMonth" selected>Mês atual</option>
-                </select>
-              </div>
-              <div class="chart" id="revenueChart"></div>
-            </section>
-            <section class="panel">
-              <div class="panel-title">
-                <h2>Serviços mais realizados</h2>
-              </div>
-              <div class="service-ranking" id="serviceRanking"></div>
-            </section>
-          </div>
-
-          <section class="panel">
-            <div class="panel-title">
-              <h2>Agenda de hoje</h2>
-              <button class="text-button" data-page-jump="agenda">Ver agenda</button>
-            </div>
-            <div class="list compact" id="todayAppointments"></div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-title">
-              <h2>Calendário mensal</h2>
-              <button class="text-button" id="currentMonth">Mês atual</button>
-            </div>
-            <div class="month-calendar" id="monthCalendar"></div>
-          </section>
-        </section>
-
-        <section class="page" id="agendaPage">
-          <div class="toolbar">
-            <input type="month" id="agendaMonth" />
-            <select id="agendaStatus">
-              <option value="todos">Todos os status</option>
-              <option>Agendado</option>
-              <option>Confirmado</option>
-              <option>Concluído</option>
-              <option>Cancelado</option>
-            </select>
-            <input type="search" id="agendaSearch" placeholder="Buscar cliente ou serviço" />
-            <button class="primary-button" id="openAppointmentModal">Novo</button>
-          </div>
-          <div class="list" id="appointmentList"></div>
-        </section>
-
-        <section class="page" id="clientesPage">
-          <div class="toolbar">
-            <input type="search" id="clientSearch" placeholder="Buscar por nome ou telefone" />
-            <button class="primary-button" id="openClientModal">Novo cliente</button>
-          </div>
-          <div class="list cards" id="clientList"></div>
-        </section>
-
-        <section class="page" id="financeiroPage">
-          <div class="toolbar">
-            <input type="month" id="financeMonth" />
-            <select id="financeType">
-              <option value="todos">Todos</option>
-              <option value="entrada">Entradas</option>
-              <option value="saida">Saídas</option>
-            </select>
-            <button class="ghost-button" id="exportPdf">PDF</button>
-            <button class="primary-button" id="openFinanceModal">Novo lançamento</button>
-          </div>
-          <div class="stats-grid three">
-            <article class="stat-card">
-              <span>Total entrada</span>
-              <strong id="financeIncome">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Total saída</span>
-              <strong id="financeOutcome">R$ 0,00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Lucro</span>
-              <strong id="financeProfit">R$ 0,00</strong>
-            </article>
-          </div>
-          <div class="list" id="financeList"></div>
-        </section>
-
-        <section class="page" id="pacotesPage">
-          <div class="toolbar">
-            <input type="search" id="packageSearch" placeholder="Buscar cliente ou pacote" />
-            <button class="primary-button" id="openPackageModal">Novo pacote</button>
-          </div>
-          <div class="list cards" id="packageList"></div>
-        </section>
-
-        <section class="page" id="servicosPage">
-          <div class="toolbar">
-            <input type="search" id="serviceSearch" placeholder="Buscar serviço" />
-            <button class="primary-button" id="openServiceModal">Novo serviço</button>
-          </div>
-          <div class="list cards" id="serviceList"></div>
-        </section>
-
-        <section class="page" id="adminPage">
-          <form class="panel admin-form" id="adminForm">
-            <div class="panel-title">
-              <h2>Identidade do sistema</h2>
-            </div>
-            <div class="form-grid">
-              <label>Nome da empresa<input id="settingCompanyName" required /></label>
-              <label>Subtítulo<input id="settingSubtitle" /></label>
-              <label>Texto da logo<input id="settingLogoText" maxlength="3" /></label>
-              <label>Imagem da logo<input id="settingLogoImage" type="file" accept="image/*" /></label>
-              <label>Cor principal <small>Cor do botão primário</small><input id="settingGreen" type="color" /></label>
-              <label>Cor escura <small>Cor do texto secundário e botões ghost</small><input id="settingGreenDark" type="color" /></label>
-              <label>Fundo<input id="settingBeige" type="color" /></label>
-              <label>Texto <small>Cor do texto principal</small><input id="settingInk" type="color" /></label>
-              <label>Cor da barra de alerta<input id="settingAlert" type="color" /></label>
-              <label>Taxa Débito (%)<input id="taxaDebito" type="number" min="0" step="0.01" /></label>
-              <label>Taxa Crédito (%)<input id="taxaCredito" type="number" min="0" step="0.01" /></label>
-              <label>Crédito do desenvolvedor<input id="settingDeveloperCredit" readonly /></label>
-            </div>
-            <div class="admin-preview">
-              <span class="brand-mark" id="adminLogoPreview">A</span>
-              <div>
-                <strong id="adminNamePreview">Barbara Beauty</strong>
-                <small id="adminSubtitlePreview">Administrador</small>
-              </div>
-              <button class="primary-button" type="button">Botão principal</button>
-              <button class="ghost-button" type="button">Botão secundário</button>
-            </div>
-            <div class="admin-backup-actions">            <h3>Gerenciamento de Funcionários</h3>
-            <p>Cadastre e defina as permissões dos funcionários.</p>
-            <button class="primary-button" id="openEmployeeModalAdmin" type="button">Novo Funcionário</button>
-            <div id="adminEmployeeList" class="employee-list"></div>
-          </div>
-          <div class="admin-backup-actions">              <h3>Backup</h3>
-              <p>Use estas opções para importar ou exportar seus dados.</p>
-              <button class="ghost-button" id="exportBackup" type="button">Exportar BKP</button>
-              <button class="ghost-button" id="importBackup" type="button">Importar BKP</button>
-            </div>
-            <div class="admin-backup-actions">
-              <h3>Instalar app</h3>
-              <p>Instale este app no seu celular ou no Windows como PWA.</p>
-              <button class="ghost-button" id="installApp" type="button">Instalar app</button>
-              <p class="install-hint" id="installAppHint"></p>
-            </div>
-            <footer class="admin-actions">
-              <button class="ghost-button" type="button" id="resetSettings">Restaurar padrão</button>
-              <button class="primary-button" type="submit">Salvar configurações</button>
-            </footer>
-          </form>
-        </section>
-
-        <section class="page" id="funcionariosPage">
-          <div class="toolbar">
-            <h2>Funcionários</h2>
-            <button class="primary-button" id="openEmployeeModal">Novo Funcionário</button>
-          </div>
-          <div class="list cards" id="employeeList"></div>
-        </section>
-      </main>
-
-      <nav class="bottom-nav" aria-label="Navegação mobile">
-        <button class="nav-item active" data-page="dashboard">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
-          <span class="nav-label">Início</span>
-        </button>
-        <button class="nav-item" data-page="agenda">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-          <span class="nav-label">Agenda</span>
-        </button>
-        <button class="nav-item" data-page="clientes">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-          <span class="nav-label">Clientes</span>
-        </button>
-        <button class="nav-item" data-page="financeiro">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></span>
-          <span class="nav-label">Finanças</span>
-        </button>
-        <button class="nav-item" data-page="pacotes">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-          <span class="nav-label">Pacotes</span>
-        </button>
-        <button class="nav-item" data-page="servicos">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.275 1.275L3 12l5.8 1.9a2 2 0 0 1 1.275 1.275L12 21l1.9-5.8a2 2 0 0 1 1.275-1.275L21 12l-5.8-1.9a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>
-          <span class="nav-label">Serviços</span>
-        </button>
-        <button class="nav-item" data-page="admin">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
-          <span class="nav-label">Admin</span>
-        </button>
-        <button class="nav-item" data-page="funcionarios">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
-          <span class="nav-label">Funcionários</span>
-        </button>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="Rayssa Oliveira Nail Design">
+        <span class="brand-mark">R</span>
+        <span>
+          <strong>Rayssa Oliveira</strong>
+          <small>Nail Design</small>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Navegacao principal">
+        <a href="#servicos">Servicos</a>
+        <a href="#portfolio">Portfolio</a>
+        <a href="#cuidados">Cuidados</a>
+        <a href="cliente.html">Agendar</a>
+        <a href="sistema.html" class="system-link">Sistema</a>
       </nav>
-    </div>
+    </header>
 
-    <dialog id="clientModal">
-      <form method="dialog" class="modal-form" id="clientForm">
-        <header>
-          <h2>Cliente</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="clientModal">×</button>
-        </header>
-        <input type="hidden" id="clientId" />
-        <label>Nome<input id="clientName" required /></label>
-        <label>Telefone<input id="clientPhone" inputmode="tel" required /></label>
-        <label>Observações<textarea id="clientNotes" rows="3"></textarea></label>
-        <footer>
-          <button type="button" class="danger-button" id="deleteClient">Excluir cliente</button>
-          <span></span>
-          <button type="button" class="ghost-button" data-close="clientModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar</button>
-        </footer>
-      </form>
-    </dialog>
-
-    <dialog id="serviceModal">
-      <form method="dialog" class="modal-form" id="serviceForm">
-        <header>
-          <h2>Serviço</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="serviceModal">×</button>
-        </header>
-        <input type="hidden" id="serviceId" />
-        <label>Nome<input id="serviceName" required /></label>
-        <label>Valor padrão<input id="servicePrice" type="number" min="0" step="0.01" required /></label>
-        <label>Duração em minutos<input id="serviceDuration" type="number" min="10" step="5" required /></label>
-        <label class="checkbox"><input id="serviceActive" type="checkbox" checked /> Ativo</label>
-        <footer>
-          <button type="button" class="danger-button" id="deleteService">Excluir serviço</button>
-          <span></span>
-          <button type="button" class="ghost-button" data-close="serviceModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar</button>
-        </footer>
-      </form>
-    </dialog>
-
-    <dialog id="appointmentModal">
-      <form method="dialog" class="modal-form wide" id="appointmentForm">
-        <header>
-          <h2>Agendamento</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="appointmentModal">×</button>
-        </header>
-        <input type="hidden" id="appointmentId" />
-        <div class="form-grid">
-          <label>Cliente<select id="appointmentClient" required></select></label>
-          <label class="checkbox"><input id="usePackage" type="checkbox" /> Usar pacote da cliente</label>
-          <label class="package-field">Pacote<select id="appointmentPackage"></select></label>
-          <label class="package-field">Serviço do pacote
-            <select id="packageCreditType"></select>
-          </label>
-          <div class="form-help package-field" id="packageHelp">Cadastre um pacote para a cliente antes de usar esta opção.</div>
-          <label class="service-field">Serviço 1<select id="appointmentService"></select></label>
-          <label class="service-field">Serviço 2 opcional<select id="appointmentService2"></select></label>
-          <label>Início<input id="appointmentStart" type="datetime-local" required /></label>
-          <label>Fim<input id="appointmentEnd" type="datetime-local" required /></label>
-          <label class="payment-field">Valor<input id="appointmentPrice" type="number" min="0" step="0.01" /></label>
-          <input id="discountType" type="hidden" value="nenhum" />
-          <input id="discountValue" type="hidden" value="0" />
-          <label class="payment-field">Forma de pagamento
-            <select id="appointmentPaymentMethod">
-              <option value="">Pendente</option>
-              <option value="dinheiro">Dinheiro</option>
-              <option value="pix">Pix</option>
-              <option value="debito">Cartão Débito</option>
-              <option value="credito">Cartão Crédito</option>
-            </select>
-          </label>
-          <label class="payment-field">Status do pagamento
-            <select id="appointmentPaymentStatus">
-              <option value="pendente">Pendente</option>
-              <option value="pago">Pago</option>
-            </select>
-          </label>
-          <div class="form-grid payment-discount-fields hidden" id="appointmentPaymentDiscountFields">
-            <label>Desconto no pagamento
-              <select id="appointmentPaymentDiscountType">
-                <option value="nenhum">Nenhum</option>
-                <option value="valor">Valor fixo</option>
-                <option value="porcentagem">Porcentagem</option>
-              </select>
-            </label>
-            <label>Valor do desconto<input id="appointmentPaymentDiscountValue" type="number" min="0" step="0.01" value="0" /></label>
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-media" aria-hidden="true">
+          <img
+            src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1300&q=85"
+            alt=""
+          />
+        </div>
+        <div class="hero-content">
+          <p class="eyebrow">Nail design, alongamento e cuidado</p>
+          <h1>Rayssa Oliveira Nail Design</h1>
+          <p>
+            Unhas feitas com acabamento delicado, planejamento do formato e orientacao de cuidados para manter o
+            resultado bonito por mais tempo.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-action" href="cliente.html">Agendar horario</a>
+            <a class="secondary-action" href="#portfolio">Ver portfolio</a>
           </div>
-          <label>Status
-            <select id="appointmentStatus">
-              <option>Agendado</option>
-              <option>Confirmado</option>
-              <option>Concluído</option>
-              <option>Cancelado</option>
-            </select>
-          </label>
         </div>
-        <div class="final-value">Valor final: <strong id="finalValuePreview">R$ 0,00</strong></div>
-        <div class="final-value" id="appointmentPaymentPreview">Pagamento pendente · líquido previsto: <strong>R$ 0,00</strong></div>
-        <label>Observações<textarea id="appointmentNotes" rows="3"></textarea></label>
-        <footer>
-          <button type="button" class="danger-button" id="deleteAppointment">Excluir</button>
-          <span></span>
-          <button type="button" class="ghost-button" data-close="appointmentModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar</button>
-        </footer>
-      </form>
-    </dialog>
+      </section>
 
-    <dialog id="packageModal">
-      <form method="dialog" class="modal-form" id="packageForm">
-        <header>
-          <h2>Pacote</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="packageModal">×</button>
-        </header>
-        <input type="hidden" id="packageId" />
-        <label>Cliente<select id="packageClient" required></select></label>
-        <label>Nome do pacote<input id="packageName" value="Pacote mensal" required /></label>
-        <label>Valor pago<input id="packageValue" type="number" min="0" step="0.01" required /></label>
-        <div class="package-services" id="packageServices"></div>
-        <label>Validade<input id="packageExpires" type="date" /></label>
-        <footer>
-          <button type="button" class="danger-button" id="deletePackage">Excluir pacote</button>
-          <span></span>
-          <button type="button" class="ghost-button" data-close="packageModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar pacote</button>
-        </footer>
-      </form>
-    </dialog>
+      <section class="intro-band" aria-label="Destaques do atendimento">
+        <article>
+          <strong>Atendimento personalizado</strong>
+          <span>Escolha de formato, tamanho, cor e acabamento conforme seu estilo.</span>
+        </article>
+        <article>
+          <strong>Procedimento orientado</strong>
+          <span>Preparacao, aplicacao e finalizacao com explicacao dos cuidados.</span>
+        </article>
+        <article>
+          <strong>Manutencao planejada</strong>
+          <span>Recomendacoes para preservar brilho, estrutura e durabilidade.</span>
+        </article>
+      </section>
 
-    <dialog id="paymentModal">
-      <form method="dialog" class="modal-form" id="paymentForm">
-        <header>
-          <h2>Pagamento</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="paymentModal">×</button>
-        </header>
-        <input type="hidden" id="paymentAppointmentId" />
-        <div class="payment-summary" id="paymentSummary"></div>
-        <label>Forma de pagamento
-          <select id="paymentMethod">
-            <option value="">Selecione</option>
-            <option value="dinheiro">Dinheiro</option>
-            <option value="pix">Pix</option>
-            <option value="debito">Cartão Débito</option>
-            <option value="credito">Cartão Crédito</option>
-          </select>
-        </label>
-        <div class="form-grid payment-discount-fields hidden" id="paymentDiscountFields">
-          <label>Desconto
-            <select id="paymentDiscountType">
-              <option value="nenhum">Nenhum</option>
-              <option value="valor">Valor fixo</option>
-              <option value="porcentagem">Porcentagem</option>
-            </select>
-          </label>
-          <label>Valor do desconto<input id="paymentDiscountValue" type="number" min="0" step="0.01" value="0" /></label>
+      <section class="content-section" id="servicos">
+        <div class="section-heading">
+          <p class="eyebrow">Servicos realizados</p>
+          <h2>Procedimentos para diferentes estilos de unha</h2>
         </div>
-        <label>Status do pagamento
-          <select id="paymentStatus">
-            <option value="pago">Pago</option>
-            <option value="pendente">Pendente</option>
-          </select>
-        </label>
-        <label>Data do pagamento<input id="paymentDate" type="date" /></label>
-        <div class="final-value" id="paymentPreview">Líquido: <strong>R$ 0,00</strong></div>
-        <label>Observações<textarea id="paymentNotes" rows="3"></textarea></label>
-        <footer>
-          <button type="button" class="ghost-button" data-close="paymentModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar pagamento</button>
-        </footer>
-      </form>
-    </dialog>
-
-    <dialog id="financeModal">
-      <form method="dialog" class="modal-form" id="financeForm">
-        <header>
-          <h2>Lançamento</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="financeModal">×</button>
-        </header>
-        <input type="hidden" id="financeId" />
-        <label>Tipo
-          <select id="financeEntryType">
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-          </select>
-        </label>
-        <label>Descrição<input id="financeDescription" required /></label>
-        <label>Categoria<input id="financeCategory" list="categories" required /></label>
-        <datalist id="categories">
-          <option value="Serviço"></option>
-          <option value="Produto"></option>
-          <option value="Material"></option>
-          <option value="Aluguel"></option>
-          <option value="Marketing"></option>
-          <option value="Outros"></option>
-        </datalist>
-        <label>Valor<input id="financeValue" type="number" min="0" step="0.01" required /></label>
-        <label>Data<input id="financeDate" type="date" required /></label>
-        <footer>
-          <button type="button" class="danger-button" id="deleteFinance">Excluir</button>
-          <span></span>
-          <button type="button" class="ghost-button" data-close="financeModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar</button>
-        </footer>
-      </form>
-    </dialog>
-
-    <dialog id="conflictModal">
-      <form method="dialog" class="modal-form" id="conflictForm">
-        <header>
-          <h2>Conflito de horário</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="conflictModal">×</button>
-        </header>
-        <div id="conflictDetails"></div>
-        <footer>
-          <button type="button" class="ghost-button" data-close="conflictModal">Entendi</button>
-          <button class="primary-button" type="button" id="applyConflictSuggestion">Usar sugestão</button>
-        </footer>
-      </form>
-    </dialog>
-
-    <dialog id="employeeModal">
-      <form method="dialog" class="modal-form" id="employeeForm">
-        <header>
-          <h2>Funcionário</h2>
-          <button value="cancel" class="icon-button" type="button" data-close="employeeModal">×</button>
-        </header>
-        <input type="hidden" id="employeeId" />
-        <label>Nome<input id="employeeName" required /></label>
-        <label>Usuário<input id="employeeUsername" required /></label>
-        <label>Email<input id="employeeEmail" type="email" required /></label>
-        <label>Senha<input id="employeePassword" type="password" placeholder="Deixe em branco para manter a atual" /></label>
-        <div class="permissions-section">
-          <h3>Permissões</h3>
-          <label class="checkbox">
-            <input type="checkbox" id="permViewDashboard" />
-            <span>Ver Dashboard</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permViewAgenda" />
-            <span>Acessar Agenda</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permCreateClient" />
-            <span>Cadastrar Clientes</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permEditClient" />
-            <span>Editar Clientes</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permCreateAppointment" />
-            <span>Criar Agendamentos</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permEditAppointment" />
-            <span>Editar Agendamentos</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permChangeStatus" />
-            <span>Trocar Status</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permViewFinance" />
-            <span>Acessar Financeiro</span>
-          </label>
-          <label class="checkbox">
-            <input type="checkbox" id="permAdmin" />
-            <span>Acesso Administrador (Todas as permissões)</span>
-          </label>
+        <div class="service-grid">
+          <article class="service-card">
+            <span>01</span>
+            <h3>Alongamento em gel</h3>
+            <p>Estrutura resistente, acabamento natural e formato definido para quem busca durabilidade.</p>
+          </article>
+          <article class="service-card">
+            <span>02</span>
+            <h3>Banho de gel</h3>
+            <p>Camada de protecao para fortalecer a unha natural e manter o brilho da esmaltação.</p>
+          </article>
+          <article class="service-card">
+            <span>03</span>
+            <h3>Blindagem</h3>
+            <p>Ideal para unhas fracas, com finalizacao fina e aspecto elegante no dia a dia.</p>
+          </article>
+          <article class="service-card">
+            <span>04</span>
+            <h3>Manutencao</h3>
+            <p>Ajuste da estrutura, correcao do crescimento e renovacao do acabamento.</p>
+          </article>
         </div>
-        <footer>
-          <button type="button" class="ghost-button" data-close="employeeModal">Cancelar</button>
-          <button class="primary-button" type="submit">Salvar</button>
-        </footer>
-      </form>
-    </dialog>
+      </section>
 
-    <input type="file" id="backupFile" accept="application/json,.json" hidden />
-    <div class="payment-alert-bar" id="paymentAlertBar">
-      <div class="payment-alert-track" id="alertMessage"></div>
-    </div>
-    <div class="toast" id="toast" role="status"></div>
-    <script src="app.js"></script>
+      <section class="split-section" id="procedimentos">
+        <div>
+          <p class="eyebrow">Como funciona</p>
+          <h2>Do preparo a finalizacao, cada etapa protege o resultado</h2>
+          <p>
+            O procedimento comeca com avaliacao das unhas, higienizacao, preparo da superficie, escolha do formato,
+            aplicacao do produto adequado e finalizacao com cor, brilho ou decoracao.
+          </p>
+          <a class="text-link" href="#cuidados">Conferir cuidados essenciais</a>
+        </div>
+        <img
+          src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=85"
+          alt="Profissional aplicando esmalte em unhas"
+        />
+      </section>
+
+      <section class="content-section portfolio-section" id="portfolio">
+        <div class="section-heading">
+          <p class="eyebrow">Portfolio</p>
+          <h2>Acabamentos para inspirar sua proxima escolha</h2>
+        </div>
+        <div class="portfolio-grid">
+          <figure>
+            <img
+              src="https://images.unsplash.com/photo-1599206676335-193c82b13c9e?auto=format&fit=crop&w=700&q=85"
+              alt="Unhas claras com acabamento delicado"
+            />
+            <figcaption>Delicado e natural</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=700&q=85"
+              alt="Unhas coloridas com acabamento brilhante"
+            />
+            <figcaption>Cor e brilho</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=700&q=85"
+              alt="Unhas com esmalte vermelho"
+            />
+            <figcaption>Classico elegante</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="care-section" id="cuidados">
+        <div class="section-heading">
+          <p class="eyebrow">Dicas e cuidados</p>
+          <h2>Pequenos cuidados mantem suas unhas lindas por mais tempo</h2>
+        </div>
+        <div class="care-list">
+          <article>
+            <h3>Use luvas ao lidar com produtos de limpeza</h3>
+            <p>Quimicos fortes podem reduzir o brilho e comprometer a durabilidade do acabamento.</p>
+          </article>
+          <article>
+            <h3>Evite usar as unhas como ferramenta</h3>
+            <p>Abrir embalagens ou raspar superficies pode causar trincas e deslocamentos.</p>
+          </article>
+          <article>
+            <h3>Hidrate cuticulas diariamente</h3>
+            <p>Oleos e hidratantes ajudam a manter a pele ao redor das unhas com aspecto saudavel.</p>
+          </article>
+          <article>
+            <h3>Respeite o prazo de manutencao</h3>
+            <p>O retorno no periodo indicado preserva a estrutura e deixa o resultado sempre alinhado.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div>
+          <p class="eyebrow">Area administrativa</p>
+          <h2>Sistema de gestao em pagina separada</h2>
+          <p>Use o acesso abaixo para agenda, clientes, servicos e financeiro, sem misturar com a pagina publica.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="primary-action" href="cliente.html">Agendar como cliente</a>
+          <a class="secondary-action dark" href="sistema.html">Entrar no sistema</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Rayssa Oliveira Nail Design</span>
+      <a href="cliente.html">Agendamento online</a>
+    </footer>
   </body>
 </html>

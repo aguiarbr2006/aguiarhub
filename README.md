@@ -1,10 +1,12 @@
-# Barbara Beauty Gestão
+# Rayssa Oliveira Gestão
 
-Sistema de gestão para nail designer, com foco em mobile, iPhone e web app.
+Sistema de gestão para Rayssa Oliveira, nail designer, com foco em mobile, iPhone e web app.
 
 ## Como Abrir
 
-Abra o arquivo `index.html` no navegador.
+Abra o arquivo `index.html` no navegador para visualizar a pagina principal publica.
+
+O sistema de gestao fica separado em `sistema.html`, usando os arquivos `styles.css` e `app.js`.
 
 Para testar como PWA instalável no iPhone ou Android, publique a pasta em uma hospedagem HTTPS, como Firebase Hosting, Netlify ou Vercel. O manifesto já está configurado em `manifest.webmanifest`.
 
