@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#6b8f71" />
+    <title>Agendamento | Rayssa Oliveira Nail Design</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="cliente.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+  </head>
+  <body>
+    <header class="client-header">
+      <a class="brand" href="index.html" aria-label="Voltar para pagina principal">
+        <span class="brand-mark">R</span>
+        <span>
+          <strong>Rayssa Oliveira</strong>
+          <small>Area da cliente</small>
+        </span>
+      </a>
+      <nav>
+        <a href="index.html">Pagina principal</a>
+        <a href="sistema.html">Sistema</a>
+      </nav>
+    </header>
+
+    <main class="client-shell">
+      <section class="intro-panel">
+        <p class="eyebrow">Agendamento online</p>
+        <h1>Escolha seu procedimento e solicite um horario</h1>
+        <p>
+          Entre com seu login para solicitar um horario e acompanhar o status: aguardando confirmacao, confirmado,
+          concluido ou cancelado.
+        </p>
+      </section>
+
+      <section class="auth-panel" id="authPanel">
+        <div class="panel-heading">
+          <p class="eyebrow">Entrar ou cadastrar</p>
+          <h2>Acesse sua conta</h2>
+        </div>
+        <button class="google-button" id="googleLogin" type="button">
+          <span>G</span>
+          Entrar com Google
+        </button>
+        <div class="divider"><span>ou</span></div>
+        <form id="emailAuthForm" class="stack-form">
+          <label>
+            Nome
+            <input id="authName" autocomplete="name" />
+          </label>
+          <label>
+            Email
+            <input id="authEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Senha
+            <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required />
+          </label>
+          <div class="auth-actions">
+            <button class="primary-action" type="submit" data-auth-mode="login">Entrar</button>
+            <button class="secondary-action" type="submit" data-auth-mode="signup">Cadastrar</button>
+          </div>
+        </form>
+        <div class="message error" id="authMessage"></div>
+      </section>
+
+      <section class="booking-panel hidden" id="bookingPanel">
+        <div class="panel-heading">
+          <p class="eyebrow">Minha conta</p>
+          <h2>Dados para contato</h2>
+        </div>
+        <form id="profileForm" class="profile-grid">
+          <label>
+            Nome completo
+            <input id="clientName" autocomplete="name" required />
+          </label>
+          <label>
+            Telefone com WhatsApp
+            <input id="clientPhone" inputmode="tel" autocomplete="tel" required />
+          </label>
+          <label>
+            Email
+            <input id="clientEmail" type="email" readonly />
+          </label>
+          <button class="secondary-action" type="submit">Salvar dados</button>
+        </form>
+
+        <details class="password-panel">
+          <summary>Trocar senha</summary>
+          <form id="passwordForm" class="stack-form">
+            <label>
+              Senha atual
+              <input id="currentPassword" type="password" autocomplete="current-password" />
+            </label>
+            <label>
+              Nova senha
+              <input id="newPassword" type="password" autocomplete="new-password" minlength="6" />
+            </label>
+            <button class="secondary-action" type="submit">Atualizar senha</button>
+          </form>
+        </details>
+
+        <div class="panel-heading booking-heading">
+          <p class="eyebrow">Solicitar horario</p>
+          <h2>Novo agendamento</h2>
+        </div>
+        <form id="bookingForm" class="stack-form">
+          <label>
+            Servico
+            <select id="bookingService" required></select>
+          </label>
+          <label>
+            Data
+            <input id="bookingDate" type="date" required />
+          </label>
+          <div class="service-summary" id="serviceSummary"></div>
+          <div class="available-slots" id="availableSlots"></div>
+          <input id="bookingTime" type="hidden" required />
+          <label>
+            Observacoes
+            <textarea id="bookingNotes" rows="3" placeholder="Ex.: preferencia de cor, formato ou detalhe importante"></textarea>
+          </label>
+          <button class="primary-action" type="submit">Solicitar agendamento</button>
+        </form>
+
+        <div class="panel-heading booking-heading">
+          <p class="eyebrow">Meus horarios</p>
+          <h2>Acompanhe o status dos seus agendamentos</h2>
+        </div>
+        <div class="booking-list" id="clientAppointments"></div>
+
+        <button class="text-button" id="logoutButton" type="button">Sair da conta</button>
+        <div class="message" id="bookingMessage"></div>
+      </section>
+    </main>
+
+    <dialog id="bookingConfirmDialog" class="booking-confirm-dialog">
+      <div class="dialog-content">
+        <div class="dialog-icon">✅</div>
+        <h2>Solicitação enviada!</h2>
+        <p>Seu agendamento foi enviado e está aguardando confirmação. Para um retorno mais rápido, envie uma mensagem no WhatsApp.</p>
+        <div class="dialog-details" id="dialogDetails"></div>
+        <a class="whatsapp-button" id="dialogWhatsapp" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Enviar mensagem no WhatsApp
+        </a>
+        <button class="close-dialog-button" id="closeBookingDialog" type="button">Fechar</button>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="cliente.js"></script>
+  </body>
+</html>

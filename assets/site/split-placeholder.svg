@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680" role="img" aria-label="Imagem local aguardando upload">
+  <rect width="900" height="680" fill="#f8f3ea"/>
+  <rect x="110" y="90" width="680" height="500" rx="28" fill="#ffffff" stroke="#d8d0c4"/>
+  <circle cx="302" cy="280" r="92" fill="#f2c8bd"/>
+  <path d="M238 438c76-102 154-130 252-86 70 32 128 28 188-12 32 70-10 136-98 158-138 36-244 16-342-60z" fill="#6b8f71" opacity=".45"/>
+  <text x="450" y="352" text-anchor="middle" fill="#31513b" font-family="Arial, sans-serif" font-size="32" font-weight="700">Upload da imagem</text>
+</svg>
