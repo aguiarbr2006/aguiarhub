@@ -3,27 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta
-      name="description"
-      content="Portfolio de nail design com servicos, procedimentos, dicas e cuidados para unhas elegantes e saudaveis."
-    />
+    <meta name="description" content="Portfolio de nail design com servicos, procedimentos, dicas e cuidados para unhas elegantes e saudaveis." />
     <meta name="theme-color" content="#6b8f71" />
     <title>Rayssa Oliveira Nail Design</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="landing.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="#inicio" aria-label="Rayssa Oliveira Nail Design">
-        <span class="brand-mark">R</span>
+        <span class="brand-mark" id="landingBrandMark">R</span>
         <span>
-          <strong>Rayssa Oliveira</strong>
-          <small>Nail Design</small>
+          <strong id="landingBrandName">Rayssa Oliveira</strong>
+          <small id="landingBrandSubtitle">Nail Design</small>
         </span>
       </a>
       <nav class="site-nav" aria-label="Navegacao principal">
@@ -31,25 +29,22 @@
         <a href="#portfolio">Portfolio</a>
         <a href="#cuidados">Cuidados</a>
         <a href="cliente.html">Agendar</a>
+        <a id="instagramNavLink" href="#" target="_blank" rel="noopener" style="display:none">Instagram</a>
         <a href="sistema.html" class="system-link">Sistema</a>
       </nav>
     </header>
 
     <main>
+      <!-- HERO -->
+       <!-- dentro do id="" tem que esta o enderecamento da imagem para poder exibir, eu coloquei o heroImage mas sempre que deslogo e retorno a pg a imagem nao aparece, por enguanto vou utilizar o endereco direto da imagem  -->
       <section class="hero" id="inicio">
         <div class="hero-media" aria-hidden="true">
-          <img
-            src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1300&q=85"
-            alt=""
-          />
+          <img id="heroImage" src="assets/site/hero-placeholder.svg" alt="" />
         </div>
         <div class="hero-content">
-          <p class="eyebrow">Nail design, alongamento e cuidado</p>
-          <h1>Rayssa Oliveira Nail Design</h1>
-          <p>
-            Unhas feitas com acabamento delicado, planejamento do formato e orientacao de cuidados para manter o
-            resultado bonito por mais tempo.
-          </p>
+          <p class="eyebrow" id="heroEyebrow">Nail design, alongamento e cuidado</p>
+          <h1 id="heroTitle">Rayssa Oliveira Nail Design</h1>
+          <p id="heroDescription">Unhas feitas com acabamento delicado, planejamento do formato e orientacao de cuidados para manter o resultado bonito por mais tempo.</p>
           <div class="hero-actions">
             <a class="primary-action" href="cliente.html">Agendar horario</a>
             <a class="secondary-action" href="#portfolio">Ver portfolio</a>
@@ -57,121 +52,108 @@
         </div>
       </section>
 
+      <!-- DESTAQUES -->
       <section class="intro-band" aria-label="Destaques do atendimento">
         <article>
-          <strong>Atendimento personalizado</strong>
-          <span>Escolha de formato, tamanho, cor e acabamento conforme seu estilo.</span>
+          <strong id="highlight1Title">Atendimento personalizado</strong>
+          <span id="highlight1Text">Escolha de formato, tamanho, cor e acabamento conforme seu estilo.</span>
         </article>
         <article>
-          <strong>Procedimento orientado</strong>
-          <span>Preparacao, aplicacao e finalizacao com explicacao dos cuidados.</span>
+          <strong id="highlight2Title">Procedimento orientado</strong>
+          <span id="highlight2Text">Preparacao, aplicacao e finalizacao com explicacao dos cuidados.</span>
         </article>
         <article>
-          <strong>Manutencao planejada</strong>
-          <span>Recomendacoes para preservar brilho, estrutura e durabilidade.</span>
+          <strong id="highlight3Title">Manutencao planejada</strong>
+          <span id="highlight3Text">Recomendacoes para preservar brilho, estrutura e durabilidade.</span>
         </article>
       </section>
 
+      <!-- SERVIÇOS -->
       <section class="content-section" id="servicos">
         <div class="section-heading">
-          <p class="eyebrow">Servicos realizados</p>
-          <h2>Procedimentos para diferentes estilos de unha</h2>
+          <p class="eyebrow" id="servicesEyebrow">Servicos realizados</p>
+          <h2 id="servicesTitle">Procedimentos para diferentes estilos de unha</h2>
         </div>
-        <div class="service-grid">
+        <div class="service-grid" id="serviceGrid">
           <article class="service-card">
             <span>01</span>
-            <h3>Alongamento em gel</h3>
-            <p>Estrutura resistente, acabamento natural e formato definido para quem busca durabilidade.</p>
+            <h3 id="service1Title">Alongamento em gel</h3>
+            <p id="service1Text">Estrutura resistente, acabamento natural e formato definido para quem busca durabilidade.</p>
           </article>
           <article class="service-card">
             <span>02</span>
-            <h3>Banho de gel</h3>
-            <p>Camada de protecao para fortalecer a unha natural e manter o brilho da esmaltação.</p>
+            <h3 id="service2Title">Banho de gel</h3>
+            <p id="service2Text">Camada de protecao para fortalecer a unha natural e manter o brilho da esmaltação.</p>
           </article>
           <article class="service-card">
             <span>03</span>
-            <h3>Blindagem</h3>
-            <p>Ideal para unhas fracas, com finalizacao fina e aspecto elegante no dia a dia.</p>
+            <h3 id="service3Title">Blindagem</h3>
+            <p id="service3Text">Ideal para unhas fracas, com finalizacao fina e aspecto elegante no dia a dia.</p>
           </article>
           <article class="service-card">
             <span>04</span>
-            <h3>Manutencao</h3>
-            <p>Ajuste da estrutura, correcao do crescimento e renovacao do acabamento.</p>
+            <h3 id="service4Title">Manutencao</h3>
+            <p id="service4Text">Ajuste da estrutura, correcao do crescimento e renovacao do acabamento.</p>
           </article>
         </div>
       </section>
 
+      <!-- SPLIT SECTION -->
       <section class="split-section" id="procedimentos">
         <div>
-          <p class="eyebrow">Como funciona</p>
-          <h2>Do preparo a finalizacao, cada etapa protege o resultado</h2>
-          <p>
-            O procedimento comeca com avaliacao das unhas, higienizacao, preparo da superficie, escolha do formato,
-            aplicacao do produto adequado e finalizacao com cor, brilho ou decoracao.
-          </p>
+          <p class="eyebrow" id="splitEyebrow">Como funciona</p>
+          <h2 id="splitTitle">Do preparo a finalizacao, cada etapa protege o resultado</h2>
+          <p id="splitText">O procedimento comeca com avaliacao das unhas, higienizacao, preparo da superficie, escolha do formato, aplicacao do produto adequado e finalizacao com cor, brilho ou decoracao.</p>
           <a class="text-link" href="#cuidados">Conferir cuidados essenciais</a>
         </div>
-        <img
-          src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=900&q=85"
-          alt="Profissional aplicando esmalte em unhas"
-        />
+        <!--Dentro do id "splitImage" e src="" coloquei uma imagem pq nao esta puxando la do src no admin-->
+        <img id="splitImage" src="assets/site/split-placeholder.svg" alt="Profissional aplicando esmalte em unhas" />
       </section>
 
+      <!-- PORTFOLIO -->
       <section class="content-section portfolio-section" id="portfolio">
         <div class="section-heading">
-          <p class="eyebrow">Portfolio</p>
-          <h2>Acabamentos para inspirar sua proxima escolha</h2>
+          <p class="eyebrow" id="portfolioEyebrow">Portfolio</p>
+          <h2 id="portfolioTitle">Acabamentos para inspirar sua proxima escolha</h2>
         </div>
-        <div class="portfolio-grid">
-          <figure>
-            <img
-              src="https://images.unsplash.com/photo-1599206676335-193c82b13c9e?auto=format&fit=crop&w=700&q=85"
-              alt="Unhas claras com acabamento delicado"
-            />
-            <figcaption>Delicado e natural</figcaption>
-          </figure>
-          <figure>
-            <img
-              src="https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=700&q=85"
-              alt="Unhas coloridas com acabamento brilhante"
-            />
-            <figcaption>Cor e brilho</figcaption>
-          </figure>
-          <figure>
-            <img
-              src="https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=700&q=85"
-              alt="Unhas com esmalte vermelho"
-            />
-            <figcaption>Classico elegante</figcaption>
-          </figure>
+        <div class="portfolio-grid" id="portfolioGrid">
+          <!-- preenchido pelo landing.js -->
+        </div>
+        <div class="instagram-cta" id="instagramCta" style="display:none">
+          <a id="instagramCtaLink" href="#" target="_blank" rel="noopener" class="instagram-button">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            <span id="instagramCtaText">Ver mais no Instagram</span>
+          </a>
         </div>
       </section>
 
+      <!-- CUIDADOS -->
       <section class="care-section" id="cuidados">
         <div class="section-heading">
-          <p class="eyebrow">Dicas e cuidados</p>
-          <h2>Pequenos cuidados mantem suas unhas lindas por mais tempo</h2>
+          <p class="eyebrow" id="careEyebrow">Dicas e cuidados</p>
+          <h2 id="careTitle">Pequenos cuidados mantem suas unhas lindas por mais tempo</h2>
         </div>
         <div class="care-list">
           <article>
-            <h3>Use luvas ao lidar com produtos de limpeza</h3>
-            <p>Quimicos fortes podem reduzir o brilho e comprometer a durabilidade do acabamento.</p>
+            <h3 id="care1Title">Use luvas ao lidar com produtos de limpeza</h3>
+            <p id="care1Text">Quimicos fortes podem reduzir o brilho e comprometer a durabilidade do acabamento.</p>
           </article>
           <article>
-            <h3>Evite usar as unhas como ferramenta</h3>
-            <p>Abrir embalagens ou raspar superficies pode causar trincas e deslocamentos.</p>
+            <h3 id="care2Title">Evite usar as unhas como ferramenta</h3>
+            <p id="care2Text">Abrir embalagens ou raspar superficies pode causar trincas e deslocamentos.</p>
           </article>
           <article>
-            <h3>Hidrate cuticulas diariamente</h3>
-            <p>Oleos e hidratantes ajudam a manter a pele ao redor das unhas com aspecto saudavel.</p>
+            <h3 id="care3Title">Hidrate cuticulas diariamente</h3>
+            <p id="care3Text">Oleos e hidratantes ajudam a manter a pele ao redor das unhas com aspecto saudavel.</p>
           </article>
           <article>
-            <h3>Respeite o prazo de manutencao</h3>
-            <p>O retorno no periodo indicado preserva a estrutura e deixa o resultado sempre alinhado.</p>
+            <h3 id="care4Title">Respeite o prazo de manutencao</h3>
+            <p id="care4Text">O retorno no periodo indicado preserva a estrutura e deixa o resultado sempre alinhado.</p>
           </article>
         </div>
       </section>
 
+      <!-- CTA -->
       <section class="cta-section">
         <div>
           <p class="eyebrow">Area administrativa</p>
@@ -186,8 +168,11 @@
     </main>
 
     <footer class="site-footer">
-      <span>Rayssa Oliveira Nail Design</span>
+      <span id="footerName">Rayssa Oliveira Nail Design</span>
       <a href="cliente.html">Agendamento online</a>
+      <a id="instagramFooterLink" href="#" target="_blank" rel="noopener" style="display:none">Instagram</a>
     </footer>
+
+    <script src="landing.js"></script>
   </body>
 </html>

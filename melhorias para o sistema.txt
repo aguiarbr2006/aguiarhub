@@ -567,3 +567,164 @@ A CAIXA DE INFORMAÇÃO toast AINDA NAO ESTA SUMINDO COMPLETAMENTE. ele desce ma
 no agendamento remover o horario e deixar somente os horarios disponiveis.
 o login/cadastro do cliente pelo celular no campo do google nao esta fazendo o cadastro nem o login.
  Deixar o site completamente editavel pelo administrador, fotos, textos, titulo, tudo editavel, acrecentar mais fotos mais coisas.
+
+---------   04/06/226 Implementar melhorias no módulo de Pacotes e Agendamentos. -------
+Implementar melhorias no módulo de Pacotes, Agendamentos e Controle de Pagamentos do sistema Rayssa Oliveira Gestão.
+
+OBJETIVO GERAL
+
+Melhorar a gestão de pacotes, permitir múltiplos serviços por agendamento e preparar a estrutura para o novo sistema de pagamentos e financeiro.
+
+---
+
+## MÓDULO DE PACOTES
+
+1. Adicionar campo "status" aos pacotes.
+
+Status possíveis:
+
+* ativo
+* finalizado
+* cancelado
+
+Regras:
+
+* ativo = pacote disponível para uso.
+* finalizado = pacote sem créditos disponíveis.
+* cancelado = pacote encerrado manualmente pelo administrador.
+
+2. Quando os créditos do pacote chegarem a zero:
+
+* Não excluir o pacote.
+* Alterar automaticamente o status para "finalizado".
+* Remover da listagem padrão de pacotes ativos.
+* Continuar disponível para consulta e histórico.
+
+3. Criar filtros na tela de pacotes:
+
+* Todos
+* Ativos
+* Finalizados
+* Cancelados
+
+4. Exibir em cada pacote:
+
+* Créditos totais
+* Créditos utilizados
+* Créditos restantes
+* Data de criação
+* Data de validade
+* Status atual
+
+5. Exclusão de pacotes
+
+A exclusão NÃO deve acontecer automaticamente.
+
+Permitir exclusão apenas quando:
+
+* O pacote foi cadastrado incorretamente.
+* Não possui utilização.
+* Não possui agendamentos vinculados.
+* Não possui movimentação financeira vinculada.
+
+Caso exista qualquer movimentação:
+
+* Bloquear exclusão.
+* Exibir mensagem explicando o motivo.
+* Permitir apenas cancelar o pacote.
+
+6. Histórico do pacote
+
+Criar histórico detalhado contendo:
+
+* Data de utilização
+* Cliente
+* Agendamento
+* Serviços realizados
+* Quantidade de créditos consumidos
+* Profissional responsável
+
+---
+
+## MÓDULO DE AGENDAMENTOS
+
+Atualmente o sistema permite apenas Serviço 1 e Serviço 2.
+
+Substituir por um sistema dinâmico de múltiplos serviços.
+
+Criar botão:
+
+"+ Adicionar Serviço"
+
+O usuário poderá adicionar quantos serviços desejar no mesmo agendamento.
+
+Exemplo:
+
+Agendamento:
+
+* Blindagem
+* Manutenção
+* Esmaltação em Gel
+* Spa dos Pés
+
+O sistema deve:
+
+* Somar automaticamente os valores.
+* Somar automaticamente os tempos.
+* Atualizar o horário final.
+* Atualizar o valor final.
+
+Cada serviço deve poder ser removido individualmente.
+
+---
+
+## INTEGRAÇÃO COM PACOTES
+
+Quando a cliente possuir pacote ativo:
+
+Exibir opção:
+
+"Utilizar créditos do pacote"
+
+Permitir consumir múltiplos créditos no mesmo agendamento.
+
+Exemplo:
+
+Pacote possui:
+
+* 4 créditos de Pé e Mão
+
+Cliente realiza:
+
+* Pé e Mão
+* Pé e Mão
+* Pé e Mão
+
+No mesmo atendimento.
+
+O sistema deve:
+
+* Consumir 3 créditos.
+* Atualizar saldo automaticamente.
+* Registrar utilização no histórico.
+
+Antes de salvar:
+
+Mostrar resumo:
+
+Créditos atuais: X
+Créditos utilizados: Y
+Créditos restantes: Z
+
+Solicitar confirmação.
+
+## REGRAS IMPORTANTES
+
+* Não perder compatibilidade com os dados já existentes.
+* Criar migração automática para registros antigos.
+* Não excluir informações financeiras históricas.
+* Não excluir pacotes finalizados.
+* Garantir integridade dos relatórios financeiros.
+* Manter todo histórico de utilização dos pacotes.
+* Comentar o código em português.
+* Manter o padrão visual atual do sistema.

@@ -1,4 +1,13 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Rayssa Oliveira Nail Design",
+        "supportEmail": "aguiar-br@hotmail.com"
+      }
+    }
+  },
   "firestore": {
     "database": "(default)",
     "location": "southamerica-east1",

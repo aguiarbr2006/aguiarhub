@@ -19,6 +19,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
     <script src="firebase-config.js"></script>
   </head>
   <body>
@@ -131,6 +132,10 @@
                 <h2>Faturamento</h2>
                 <select id="dashboardPeriod">
                   <option value="currentMonth" selected>Mês atual</option>
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="14">Últimos 14 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                  <option value="90">Últimos 90 dias</option>
                 </select>
               </div>
               <div class="chart" id="revenueChart"></div>
@@ -216,6 +221,13 @@
         <section class="page" id="pacotesPage">
           <div class="toolbar">
             <input type="search" id="packageSearch" placeholder="Buscar cliente ou pacote" />
+            <select id="packageStatusFilter">
+              <option value="ativos">Ativos</option>
+              <option value="todos">Todos</option>
+              <option value="ativo">Somente ativos</option>
+              <option value="finalizado">Finalizados</option>
+              <option value="cancelado">Cancelados</option>
+            </select>
             <button class="primary-button" id="openPackageModal">Novo pacote</button>
           </div>
           <div class="list cards" id="packageList"></div>
@@ -237,6 +249,8 @@
             <div class="form-grid">
               <label>Nome da empresa<input id="settingCompanyName" required /></label>
               <label>Subtítulo<input id="settingSubtitle" /></label>
+              <label>Telefone de contato (WhatsApp)<input id="settingTelefoneContato" inputmode="tel" placeholder="(11) 99999-9999" /></label>
+              <label>Instagram <small>Ex: @rayssaoliveira ou URL completa</small><input id="settingInstagram" placeholder="@usuario ou https://instagram.com/..." /></label>
               <label>Texto da logo<input id="settingLogoText" maxlength="3" /></label>
               <label>Imagem da logo<input id="settingLogoImage" type="file" accept="image/*" /></label>
               <label>Cor principal <small>Cor do botão primário</small><input id="settingGreen" type="color" /></label>
@@ -278,6 +292,111 @@
               <button class="primary-button" type="submit">Salvar configurações</button>
             </footer>
           </form>
+
+          <!-- Editor do site público -->
+          <div class="panel admin-form" id="landingEditorPanel">
+            <div class="panel-title">
+              <h2>Editar site público</h2>
+              <a class="ghost-button" href="index.html" target="_blank" rel="noopener">Ver site</a>
+            </div>
+
+            <!-- Hero -->
+            <details class="landing-section-editor" open>
+              <summary>Seção Hero (topo)</summary>
+              <div class="form-grid">
+                <label>Eyebrow (texto pequeno)<input id="lc_heroEyebrow" /></label>
+                <label>Título principal<input id="lc_heroTitle" /></label>
+                <label style="grid-column:1/-1">Descrição<textarea id="lc_heroDescription" rows="3"></textarea></label>
+                <!-- Upload da foto de fundo da página principal.
+                     O input hidden guarda a imagem em Base64 depois que o app.js processa o arquivo. -->
+                <div class="image-upload-field" style="grid-column:1/-1">
+                  <span>Imagem de fundo</span>
+                  <img id="lc_heroImagePreview" class="image-upload-preview" alt="" />
+                  <input id="lc_heroImage" type="url" placeholder="Cole a URL da imagem de fundo aqui" />
+                  <input id="lc_heroImageFile" type="file" accept="image/*" />
+                </div>
+              </div>
+            </details>
+
+            <!-- Destaques -->
+            <details class="landing-section-editor">
+              <summary>Destaques (3 colunas)</summary>
+              <div class="form-grid">
+                <label>Título 1<input id="lc_highlight1Title" /></label>
+                <label>Texto 1<input id="lc_highlight1Text" /></label>
+                <label>Título 2<input id="lc_highlight2Title" /></label>
+                <label>Texto 2<input id="lc_highlight2Text" /></label>
+                <label>Título 3<input id="lc_highlight3Title" /></label>
+                <label>Texto 3<input id="lc_highlight3Text" /></label>
+              </div>
+            </details>
+
+            <!-- Serviços -->
+            <details class="landing-section-editor">
+              <summary>Seção Serviços</summary>
+              <div class="form-grid">
+                <label>Eyebrow<input id="lc_servicesEyebrow" /></label>
+                <label>Título<input id="lc_servicesTitle" /></label>
+                <label>Serviço 1 — Título<input id="lc_service1Title" /></label>
+                <label>Serviço 1 — Texto<input id="lc_service1Text" /></label>
+                <label>Serviço 2 — Título<input id="lc_service2Title" /></label>
+                <label>Serviço 2 — Texto<input id="lc_service2Text" /></label>
+                <label>Serviço 3 — Título<input id="lc_service3Title" /></label>
+                <label>Serviço 3 — Texto<input id="lc_service3Text" /></label>
+                <label>Serviço 4 — Título<input id="lc_service4Title" /></label>
+                <label>Serviço 4 — Texto<input id="lc_service4Text" /></label>
+              </div>
+            </details>
+
+            <!-- Split section -->
+            <details class="landing-section-editor">
+              <summary>Seção Como Funciona</summary>
+              <div class="form-grid">
+                <label>Eyebrow<input id="lc_splitEyebrow" /></label>
+                <label>Título<input id="lc_splitTitle" /></label>
+                <label style="grid-column:1/-1">Texto<textarea id="lc_splitText" rows="3"></textarea></label>
+                <!-- Upload da imagem lateral da seção "Como funciona". -->
+                <div class="image-upload-field" style="grid-column:1/-1">
+                  <span>Imagem</span>
+                  <img id="lc_splitImagePreview" class="image-upload-preview" alt="" />
+                  <input id="lc_splitImage" type="url" placeholder="Cole a URL da imagem aqui" />
+                  <input id="lc_splitImageFile" type="file" accept="image/*" />
+                </div>
+              </div>
+            </details>
+
+            <!-- Portfolio -->
+            <details class="landing-section-editor">
+              <summary>Portfolio (fotos)</summary>
+              <div class="form-grid">
+                <label>Eyebrow<input id="lc_portfolioEyebrow" /></label>
+                <label>Título<input id="lc_portfolioTitle" /></label>
+              </div>
+              <div class="portfolio-photos-editor" id="portfolioPhotosEditor"></div>
+              <button class="ghost-button" type="button" id="addPortfolioPhoto" style="margin-top:10px">+ Adicionar foto</button>
+            </details>
+
+            <!-- Cuidados -->
+            <details class="landing-section-editor">
+              <summary>Seção Cuidados</summary>
+              <div class="form-grid">
+                <label>Eyebrow<input id="lc_careEyebrow" /></label>
+                <label>Título<input id="lc_careTitle" /></label>
+                <label>Dica 1 — Título<input id="lc_care1Title" /></label>
+                <label>Dica 1 — Texto<input id="lc_care1Text" /></label>
+                <label>Dica 2 — Título<input id="lc_care2Title" /></label>
+                <label>Dica 2 — Texto<input id="lc_care2Text" /></label>
+                <label>Dica 3 — Título<input id="lc_care3Title" /></label>
+                <label>Dica 3 — Texto<input id="lc_care3Text" /></label>
+                <label>Dica 4 — Título<input id="lc_care4Title" /></label>
+                <label>Dica 4 — Texto<input id="lc_care4Text" /></label>
+              </div>
+            </details>
+
+            <footer class="admin-actions">
+              <button class="primary-button" type="button" id="saveLandingContent">Salvar site</button>
+            </footer>
+          </div>
         </section>
 
         <section class="page" id="funcionariosPage">
@@ -373,17 +492,27 @@
         <input type="hidden" id="appointmentId" />
         <div class="form-grid">
           <label>Cliente<select id="appointmentClient" required></select></label>
-          <label class="checkbox"><input id="usePackage" type="checkbox" /> Usar pacote da cliente</label>
+          <label class="checkbox"><input id="usePackage" type="checkbox" /> Usar créditos do pacote</label>
+
+          <!-- MODO PACOTE -->
           <label class="package-field">Pacote<select id="appointmentPackage"></select></label>
-          <label class="package-field">Serviço do pacote
-            <select id="packageCreditType"></select>
-          </label>
           <div class="form-help package-field" id="packageHelp">Cadastre um pacote para a cliente antes de usar esta opção.</div>
-          <label class="service-field">Serviço 1<select id="appointmentService"></select></label>
-          <label class="service-field">Serviço 2 opcional<select id="appointmentService2"></select></label>
+          <!-- créditos do pacote a consumir (gerado dinamicamente) -->
+          <div class="package-field" id="packageCreditsContainer" style="grid-column:1/-1"></div>
+          <!-- resumo de créditos antes de salvar -->
+          <div class="package-field final-value" id="packageCreditSummary" style="grid-column:1/-1;display:none"></div>
+
+          <!-- MODO SERVIÇO NORMAL (lista dinâmica) -->
+          <div class="service-field" id="servicesList" style="grid-column:1/-1">
+            <!-- linhas de serviço geradas por renderServiceLines() -->
+          </div>
+          <div class="service-field" style="grid-column:1/-1">
+            <button class="ghost-button" type="button" id="addServiceLine" style="width:auto">+ Adicionar serviço</button>
+          </div>
+
           <label>Início<input id="appointmentStart" type="datetime-local" required /></label>
           <label>Fim<input id="appointmentEnd" type="datetime-local" required /></label>
-          <label class="payment-field">Valor<input id="appointmentPrice" type="number" min="0" step="0.01" /></label>
+          <label class="payment-field">Valor total<input id="appointmentPrice" type="number" min="0" step="0.01" /></label>
           <input id="discountType" type="hidden" value="nenhum" />
           <input id="discountValue" type="hidden" value="0" />
           <label class="payment-field">Forma de pagamento
@@ -446,10 +575,16 @@
         <label>Valor pago<input id="packageValue" type="number" min="0" step="0.01" required /></label>
         <div class="package-services" id="packageServices"></div>
         <label>Validade<input id="packageExpires" type="date" /></label>
+        <!-- Histórico de uso do pacote -->
+        <div id="packageHistorySection" style="display:none">
+          <div class="package-services-title" style="margin-bottom:8px">Histórico de utilização</div>
+          <div id="packageHistoryList" class="package-history-list"></div>
+        </div>
         <footer>
-          <button type="button" class="danger-button" id="deletePackage">Excluir pacote</button>
+          <button type="button" class="danger-button" id="deletePackage">Excluir</button>
+          <button type="button" class="ghost-button" id="cancelPackageBtn" style="display:none">Cancelar pacote</button>
           <span></span>
-          <button type="button" class="ghost-button" data-close="packageModal">Cancelar</button>
+          <button type="button" class="ghost-button" data-close="packageModal">Fechar</button>
           <button class="primary-button" type="submit">Salvar pacote</button>
         </footer>
       </form>
