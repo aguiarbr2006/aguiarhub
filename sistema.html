@@ -242,55 +242,113 @@
         </section>
 
         <section class="page" id="adminPage">
-          <form class="panel admin-form" id="adminForm">
-            <div class="panel-title">
-              <h2>Identidade do sistema</h2>
-            </div>
-            <div class="form-grid">
-              <label>Nome da empresa<input id="settingCompanyName" required /></label>
-              <label>Subtítulo<input id="settingSubtitle" /></label>
-              <label>Telefone de contato (WhatsApp)<input id="settingTelefoneContato" inputmode="tel" placeholder="(11) 99999-9999" /></label>
-              <label>Instagram <small>Ex: @rayssaoliveira ou URL completa</small><input id="settingInstagram" placeholder="@usuario ou https://instagram.com/..." /></label>
-              <label>Texto da logo<input id="settingLogoText" maxlength="3" /></label>
-              <label>Imagem da logo<input id="settingLogoImage" type="file" accept="image/*" /></label>
-              <label>Cor principal <small>Cor do botão primário</small><input id="settingGreen" type="color" /></label>
-              <label>Cor escura <small>Cor do texto secundário e botões ghost</small><input id="settingGreenDark" type="color" /></label>
-              <label>Fundo<input id="settingBeige" type="color" /></label>
-              <label>Texto <small>Cor do texto principal</small><input id="settingInk" type="color" /></label>
-              <label>Cor da barra de alerta<input id="settingAlert" type="color" /></label>
-              <label>Taxa Débito (%)<input id="taxaDebito" type="number" min="0" step="0.01" /></label>
-              <label>Taxa Crédito (%)<input id="taxaCredito" type="number" min="0" step="0.01" /></label>
-              <label>Crédito do desenvolvedor<input id="settingDeveloperCredit" readonly /></label>
-            </div>
-            <div class="admin-preview">
-              <span class="brand-mark" id="adminLogoPreview">A</span>
-              <div>
-                <strong id="adminNamePreview">Barbara Beauty</strong>
-                <small id="adminSubtitlePreview">Administrador</small>
+          <form class="admin-layout" id="adminForm">
+            <div class="admin-main-content">
+              <!-- Seção 1: Identidade e Marca -->
+              <div class="panel">
+                <div class="panel-title">
+                  <h2>Identidade da Marca</h2>
+                </div>
+                <div class="form-grid">
+                  <label>Nome da empresa<input id="settingCompanyName" required /></label>
+                  <label>Subtítulo<input id="settingSubtitle" /></label>
+                  <label>Telefone (WhatsApp)<input id="settingTelefoneContato" inputmode="tel" placeholder="(11) 99999-9999" /></label>
+                  <label>Instagram<input id="settingInstagram" placeholder="@usuario ou link" /></label>
+                  <label>Texto da logo (3 letras)<input id="settingLogoText" maxlength="3" /></label>
+                  <label>Imagem da logo<input id="settingLogoImage" type="file" accept="image/*" /></label>
+                </div>
               </div>
-              <button class="primary-button" type="button">Botão principal</button>
-              <button class="ghost-button" type="button">Botão secundário</button>
+
+              <!-- Seção 2: Horários e Funcionamento -->
+              <div class="panel">
+                <div class="panel-title">
+                  <h2>Horários de Funcionamento</h2>
+                </div>
+                <div class="form-grid">
+                  <label>Início do atendimento<input id="settingOpeningTime" type="time" /></label>
+                  <label>Fim do atendimento<input id="settingClosingTime" type="time" /></label>
+                  <label>Início do almoço<input id="settingLunchStart" type="time" /></label>
+                  <label>Fim do almoço<input id="settingLunchEnd" type="time" /></label>
+                </div>
+              </div>
+
+              <!-- Seção 3: Cores e Estilo -->
+              <div class="panel">
+                <div class="panel-title">
+                  <h2>Cores e Estilo Visual</h2>
+                </div>
+                <div class="form-grid colors-grid">
+                  <label>Cor principal<input id="settingGreen" type="color" /></label>
+                  <label>Cor escura<input id="settingGreenDark" type="color" /></label>
+                  <label>Fundo<input id="settingBeige" type="color" /></label>
+                  <label>Texto<input id="settingInk" type="color" /></label>
+                  <label>Alerta<input id="settingAlert" type="color" /></label>
+                </div>
+                <div class="admin-preview">
+                  <span class="brand-mark" id="adminLogoPreview">A</span>
+                  <div>
+                    <strong id="adminNamePreview">Barbara Beauty</strong>
+                    <small id="adminSubtitlePreview">Administrador</small>
+                  </div>
+                  <div class="preview-buttons">
+                    <button class="primary-button" type="button" style="padding:0 12px; min-height:36px; font-size:12px">Primário</button>
+                    <button class="ghost-button" type="button" style="padding:0 12px; min-height:36px; font-size:12px">Ghost</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção 4: Financeiro e Taxas -->
+              <div class="panel">
+                <div class="panel-title">
+                  <h2>Configurações Financeiras</h2>
+                </div>
+                <div class="form-grid">
+                  <label>Taxa Débito (%)<input id="taxaDebito" type="number" min="0" step="0.01" /></label>
+                  <label>Taxa Crédito (%)<input id="taxaCredito" type="number" min="0" step="0.01" /></label>
+                </div>
+              </div>
+
+              <!-- Seção 5: Funcionários -->
+              <div class="panel">
+                <div class="panel-title">
+                  <h2>Gestão de Funcionários</h2>
+                  <button class="primary-button" id="openEmployeeModalAdmin" type="button">Novo Funcionário</button>
+                </div>
+                <p class="muted" style="margin-bottom:12px">Gerencie quem tem acesso ao sistema e suas permissões.</p>
+                <div id="adminEmployeeList" class="employee-list"></div>
+              </div>
             </div>
-            <div class="admin-backup-actions">            <h3>Gerenciamento de Funcionários</h3>
-            <p>Cadastre e defina as permissões dos funcionários.</p>
-            <button class="primary-button" id="openEmployeeModalAdmin" type="button">Novo Funcionário</button>
-            <div id="adminEmployeeList" class="employee-list"></div>
-          </div>
-          <div class="admin-backup-actions">              <h3>Backup</h3>
-              <p>Use estas opções para importar ou exportar seus dados.</p>
-              <button class="ghost-button" id="exportBackup" type="button">Exportar BKP</button>
-              <button class="ghost-button" id="importBackup" type="button">Importar BKP</button>
-            </div>
-            <div class="admin-backup-actions">
-              <h3>Instalar app</h3>
-              <p>Instale este app no seu celular ou no Windows como PWA.</p>
-              <button class="ghost-button" id="installApp" type="button">Instalar app</button>
-              <p class="install-hint" id="installAppHint"></p>
-            </div>
-            <footer class="admin-actions">
-              <button class="ghost-button" type="button" id="resetSettings">Restaurar padrão</button>
-              <button class="primary-button" type="submit">Salvar configurações</button>
-            </footer>
+
+            <aside class="admin-sidebar">
+              <!-- Backup -->
+              <div class="panel">
+                <div class="panel-title"><h3>Backup</h3></div>
+                <p class="muted" style="font-size:13px; margin-bottom:12px">Exporte ou importe todos os dados do sistema.</p>
+                <div style="display:grid; gap:8px">
+                  <button class="ghost-button" id="exportBackup" type="button">Exportar Dados</button>
+                  <button class="ghost-button" id="importBackup" type="button">Importar Dados</button>
+                </div>
+              </div>
+
+              <!-- App -->
+              <div class="panel">
+                <div class="panel-title"><h3>Instalação</h3></div>
+                <p class="muted" style="font-size:13px; margin-bottom:12px">Instale como aplicativo no seu dispositivo.</p>
+                <button class="ghost-button" id="installApp" type="button" style="width:100%">Instalar App</button>
+                <p class="install-hint" id="installAppHint" style="font-size:11px; margin-top:8px"></p>
+              </div>
+
+              <!-- Info -->
+              <div class="panel">
+                <div class="panel-title"><h3>Sistema</h3></div>
+                <label style="font-size:12px">Créditos<input id="settingDeveloperCredit" readonly style="font-size:11px; height:32px; min-height:32px" /></label>
+              </div>
+
+              <div class="admin-floating-actions">
+                <button class="ghost-button" type="button" id="resetSettings">Restaurar Padrão</button>
+                <button class="primary-button" type="submit">Salvar Tudo</button>
+              </div>
+            </aside>
           </form>
 
           <!-- Editor do site público -->
@@ -307,13 +365,11 @@
                 <label>Eyebrow (texto pequeno)<input id="lc_heroEyebrow" /></label>
                 <label>Título principal<input id="lc_heroTitle" /></label>
                 <label style="grid-column:1/-1">Descrição<textarea id="lc_heroDescription" rows="3"></textarea></label>
-                <!-- Upload da foto de fundo da página principal.
-                     O input hidden guarda a imagem em Base64 depois que o app.js processa o arquivo. -->
+                <!-- Link da foto de fundo da página principal. -->
                 <div class="image-upload-field" style="grid-column:1/-1">
-                  <span>Imagem de fundo</span>
+                  <span>Link da imagem de fundo</span>
                   <img id="lc_heroImagePreview" class="image-upload-preview" alt="" />
-                  <input id="lc_heroImage" type="url" placeholder="Cole a URL da imagem de fundo aqui" />
-                  <input id="lc_heroImageFile" type="file" accept="image/*" />
+                  <input id="lc_heroImage" type="url" placeholder="Cole a URL da imagem de fundo aqui (ex: https://...)" />
                 </div>
               </div>
             </details>
@@ -355,12 +411,11 @@
                 <label>Eyebrow<input id="lc_splitEyebrow" /></label>
                 <label>Título<input id="lc_splitTitle" /></label>
                 <label style="grid-column:1/-1">Texto<textarea id="lc_splitText" rows="3"></textarea></label>
-                <!-- Upload da imagem lateral da seção "Como funciona". -->
+                <!-- Link da imagem lateral da seção "Como funciona". -->
                 <div class="image-upload-field" style="grid-column:1/-1">
-                  <span>Imagem</span>
+                  <span>Link da imagem</span>
                   <img id="lc_splitImagePreview" class="image-upload-preview" alt="" />
-                  <input id="lc_splitImage" type="url" placeholder="Cole a URL da imagem aqui" />
-                  <input id="lc_splitImageFile" type="file" accept="image/*" />
+                  <input id="lc_splitImage" type="url" placeholder="Cole a URL da imagem aqui (ex: https://...)" />
                 </div>
               </div>
             </details>

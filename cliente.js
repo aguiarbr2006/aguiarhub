@@ -393,20 +393,35 @@ function renderAvailableSlots() {
 // Gera sugestões de horários a cada 30 minutos e remove horários que já têm conflito.
 function getAvailableSlots(date, durationMinutes) {
   const slots = [];
-  const openingHour = 8;
-  const closingHour = 19;
+  const settings = state.settings || {};
+  const openingTime = settings.openingTime || "08:00";
+  const closingTime = settings.closingTime || "19:00";
+  const lunchStart = settings.lunchStart || "12:00";
+  const lunchEnd = settings.lunchEnd || "13:00";
   const stepMinutes = 30;
+  
   const now = new Date();
-  const dayStart = new Date(`${date}T${String(openingHour).padStart(2, "0")}:00`);
-  const dayEnd = new Date(`${date}T${String(closingHour).padStart(2, "0")}:00`);
+  const dayStart = new Date(`${date}T${openingTime}`);
+  const dayEnd = new Date(`${date}T${closingTime}`);
+  const lunchStartTime = new Date(`${date}T${lunchStart}`).getTime();
+  const lunchEndTime = new Date(`${date}T${lunchEnd}`).getTime();
 
   for (let start = new Date(dayStart); start.getTime() + durationMinutes * 60000 <= dayEnd.getTime(); start = new Date(start.getTime() + stepMinutes * 60000)) {
     if (start < now) continue;
-    const end = new Date(start.getTime() + durationMinutes * 60000);
+    
+    const startTime = start.getTime();
+    const endTime = startTime + durationMinutes * 60000;
+    
+    // Verificar conflito com horário de almoço
+    // Se o atendimento começar ou terminar dentro do almoço, ou englobar o almoço
+    if (startTime < lunchEndTime && endTime > lunchStartTime) {
+      continue;
+    }
+
     const candidate = {
       id: "candidate",
       dataHoraInicio: toDateTimeInput(start),
-      dataHoraFim: toDateTimeInput(end),
+      dataHoraFim: toDateTimeInput(new Date(endTime)),
       status: "Pendente confirmação",
     };
     if (!getScheduleConflict(state.agendamentos, candidate)) {
